@@ -296,6 +296,7 @@ input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var
 .check-row.on{border-color:var(--accent);background:var(--accent-soft)}
 .check-row.on .box{background:var(--accent);border-color:var(--accent)}
 .check-row.on .box::after{content:"";width:9px;height:5px;border:2.5px solid var(--accent-ink);border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
+.check-row:disabled{opacity:.5;cursor:default}
 .check-row span.n{margin-left:auto;color:var(--muted);font-weight:500;font-size:14px}
 .score{display:grid;justify-items:center;gap:4px;text-align:center;padding:8px 0 4px}
 .score b{font-family:var(--round);font-size:clamp(44px,9vw,64px);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -891,8 +892,8 @@ async function moveSelected(lecId){
   } catch { toast('Verschieben hat nicht geklappt') }
 }
 function learnSheet(sid){
-  const lecs = lecturesOf(sid), all = cardsOf(sid), avail = TYPES.filter(t => all.some(c => c.type === t));
-  if (!lecs.length && avail.length < 2) return startLearn(sid);
+  const lecs = lecturesOf(sid), all = cardsOf(sid);
+  if (!all.length) return;
   const f = state.view.lec && state.view.lec !== 'all' ? state.view.lec : null;
   const keys = [...lecs.map(L => L.id), ...(all.some(c => !lecOf(c)) ? ['none'] : [])];
   if (!lecSel || lecSel.sid !== sid || lecSel.mode !== 'learn') lecSel = {sid, mode:'learn', sel:new Set(f ? [f] : keys), types:new Set(TYPES)};
@@ -901,8 +902,10 @@ function learnSheet(sid){
   const n = inLec.filter(c => lecSel.types.has(c.type)).length;
   openSheet(`<h2>Was möchtest du lernen?</h2><p>Wähle ${lecs.length ? 'Vorlesungen und ' : ''}Fragetypen.</p>
     ${lecs.length ? lecPicker(sid, lecSel.sel, 'lsel-toggle') : ''}
-    ${avail.length > 1 ? `<div class="setup-group"><span class="lbl">Fragetypen</span>
-      ${avail.map(t => `<button type="button" class="check-row ${lecSel.types.has(t) ? 'on' : ''}" data-action="ltype-toggle" data-t="${t}"><span class="box"></span>${t === 'basic' ? 'Karteikarten' : TYPE_NAMES[t]}<span class="n">${inLec.filter(c => c.type === t).length}</span></button>`).join('')}</div>` : ''}
+    <div class="setup-group"><span class="lbl">Fragetypen</span>
+      ${TYPES.map(t => { const k = inLec.filter(c => c.type === t).length, on = k && lecSel.types.has(t);
+        return `<button type="button" class="check-row ${on ? 'on' : ''}" data-action="ltype-toggle" data-t="${t}" ${k ? '' : 'disabled'}><span class="box"></span>${t === 'basic' ? 'Karteikarten' : TYPE_NAMES[t]}<span class="n">${k || 'noch keine Karten'}</span></button>` }).join('')}
+      ${TYPES.some(t => !inLec.some(c => c.type === t)) ? '<p class="small muted">Fehlende Typen erstellst du mit «Neue Karte», mit «In Choice-Frage umwandeln» oder lässt sie dir von Claude aus deinen Karten erstellen.</p>' : ''}</div>
     <div class="sheet-actions"><button class="btn" data-action="sheet-no">Abbrechen</button><button class="btn primary" data-action="learn-go" ${n ? '' : 'disabled'}>Los (${n} ${n === 1 ? 'Karte' : 'Karten'})</button></div>`);
 }
 function lecPicker(sid, sel, action){

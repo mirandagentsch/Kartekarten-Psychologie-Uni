@@ -1,6 +1,6 @@
 // Service Worker: hält die App offline verfügbar.
 // Bei jeder neuen Version die Nummer erhöhen, damit Geräte die Änderung laden.
-const VERSION = 'karteikarten-v11';
+const VERSION = 'karteikarten-v12';
 const ASSETS = [
   './',
   './index.html',
