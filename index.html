@@ -1086,6 +1086,7 @@ function authMsg(j){
   if (/rate limit|too many/i.test(m)) return 'Zu viele Versuche. Warte kurz und versuche es dann noch einmal.';
   return m || 'Das hat nicht geklappt. Prüfe deine Internetverbindung.';
 }
+const appURL = () => location.origin + location.pathname.replace(/index\.html$/, '');
 async function authCall(path, body){
   const r = await fetch(SYNC.url + '/auth/v1/' + path, {method:'POST', headers:{apikey:SYNC.key, 'Content-Type':'application/json'}, body:JSON.stringify(body)});
   const j = await r.json().catch(() => ({}));
@@ -1292,13 +1293,26 @@ async function submitAuth(form){
   const btn = form.querySelector('[type=submit]'); btn.disabled = true;
   try {
     if (up) {
-      const j = await authCall('signup', {email:mail, password:pw});
+      const j = await authCall('signup?redirect_to=' + encodeURIComponent(appURL()), {email:mail, password:pw});
       if (j.access_token) saveSession(j);
       else { openSheet(`<h2>Bestätige deine E-Mail</h2><p>Wir haben dir eine Mail an <b></b> geschickt. Tippe auf den Link darin. Danach meldest du dich hier in der App mit deiner E-Mail und deinem Passwort an.</p>
         <div class="sheet-actions"><button class="btn primary" data-action="account-mode" data-m="in">Zur Anmeldung</button></div>`); layer.querySelector('b').textContent = mail; return }
     } else saveSession(await authCall('token?grant_type=password', {email:mail, password:pw}));
     closeSheet(); toast('Angemeldet. Deine Daten werden abgeglichen.'); setSync('busy'); await sync(); render();
-  } catch (e) { fail(e.message === 'Failed to fetch' ? 'Keine Verbindung zum Server. Prüfe dein Internet.' : e.message); btn.disabled = false }
+  } catch (e) {
+    fail(e.message === 'Failed to fetch' ? 'Keine Verbindung zum Server. Prüfe dein Internet.' : e.message); btn.disabled = false;
+    if (/bestätige zuerst/.test(e.message) && !form.querySelector('[data-action=resend-confirm]')) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'link-btn'; b.dataset.action = 'resend-confirm';
+      b.textContent = 'Bestätigungs-Mail erneut senden'; b.style.justifySelf = 'start'; err.after(b);
+    }
+  }
+}
+async function resendConfirm(){
+  const mail = ($('#a-mail') || {}).value || '', err = $('#a-err');
+  try {
+    await authCall('resend?redirect_to=' + encodeURIComponent(appURL()), {type:'signup', email:mail.trim()});
+    err.textContent = 'Neue Bestätigungs-Mail ist unterwegs. Tippe auf den Link darin und melde dich danach hier an.'; err.hidden = false;
+  } catch (e) { err.textContent = e.message; err.hidden = false }
 }
 async function signOut(){
   if (!(await ask({title:'Abmelden?', text:'Deine Karten bleiben auf diesem Gerät. Änderungen werden erst nach erneutem Anmelden wieder abgeglichen.', ok:'Abmelden'}))) return;
@@ -1877,6 +1891,7 @@ const actions = {
   'account-mode': el => accountSheet(el.dataset.m),
   'sync-now': () => { setSync('busy'); sync() },
   'sign-out': () => signOut(),
+  'resend-confirm': () => resendConfirm(),
   'lesson-open': el => startLesson(el.dataset.id),
   'lesson-next': () => lessonNext(),
   'lesson-exit': () => go({name:'subject', id:lessonById(state.lp.id).subjectId}),
@@ -1984,8 +1999,14 @@ async function load(){
   if (/access_token=|error_description=/.test(location.hash)) {
     const h = new URLSearchParams(location.hash.slice(1));
     history.replaceState(null, '', location.pathname + location.search);
-    if (h.get('error_description')) toast('Bestätigung fehlgeschlagen: ' + h.get('error_description'));
-    else toast(standalone ? 'E-Mail bestätigt. Melde dich jetzt an.' : 'E-Mail bestätigt. Öffne die installierte App und melde dich dort an.');
+    if (h.get('error_description')) toast(/expired|invalid/i.test(h.get('error_code') || h.get('error_description')) ? 'Der Bestätigungslink ist abgelaufen. Fordere in der App eine neue Mail an.' : 'Bestätigung fehlgeschlagen: ' + h.get('error_description'));
+    else {
+      try {
+        const at = h.get('access_token'), p = JSON.parse(atob(at.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        saveSession({access_token:at, refresh_token:h.get('refresh_token'), expires_in:+h.get('expires_in') || 3600, user:{id:p.sub, email:p.email}});
+      } catch {}
+      toast(standalone ? 'E-Mail bestätigt. Du bist angemeldet.' : 'E-Mail bestätigt. Öffne jetzt die installierte App und melde dich dort an.');
+    }
   }
   render();
   try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist() } catch {}
