@@ -1,0 +1,23 @@
+KARTEIKARTEN-APP – SO STELLST DU SIE ONLINE
+
+1. Entpacke diese ZIP-Datei auf deinem Mac.
+2. Erstelle auf github.com ein kostenloses Konto.
+3. Oben rechts «+» → «New repository». Name z. B. karteikarten, «Public» wählen, «Create repository».
+4. «Add file» → «Upload files». Ziehe den INHALT dieses Ordners hinein
+   (index.html, manifest.webmanifest, sw.js und den Ordner icons). Dann «Commit changes».
+5. «Settings» → «Pages». Unter «Source»: «Deploy from a branch», Branch «main», Ordner «/ (root)», «Save».
+6. Nach 1–2 Minuten steht oben deine Adresse, z. B. https://deinname.github.io/karteikarten/
+
+INSTALLIEREN
+- iPhone und iPad: Adresse in Safari öffnen → «Teilen» → «Zum Home-Bildschirm».
+- MacBook: Adresse in Safari öffnen → Menü «Ablage» → «Zum Dock hinzufügen».
+- Karten erst in der installierten App anlegen (eigener Speicher, getrennt von Safari).
+
+KARTEN ZWISCHEN GERÄTEN ÜBERTRAGEN
+- In der App oben rechts «Backup» → «Backup erstellen» → Datei teilen bzw. herunterladen.
+- Auf dem anderen Gerät: «Backup» → «Backup importieren» → Datei auswählen.
+
+UPDATES
+- Geänderte Dateien wie in Schritt 4 erneut hochladen.
+- In sw.js die Zeile VERSION erhöhen (z. B. karteikarten-v2).
+- Die App ein- bis zweimal schliessen und neu öffnen, dann erscheint die neue Version.

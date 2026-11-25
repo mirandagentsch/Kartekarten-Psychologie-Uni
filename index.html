@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Karteikarten</title>
+<meta name="description" content="Eigene Karteikarten erstellen und lernen: Karteikarte, Single Choice, Multiple Choice, K-prim.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Karteikarten">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F4F1EC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14161B" media="(prefers-color-scheme: dark)">
+<style>
+/*
+VOICE: ruhig, warm, konzentriert – ein Lernort, kein Werkzeugkasten.
+IDEA: der Karteikasten auf dem Schreibtisch – Fächer sind Kartenstapel, jede Karte ein Stück Papier.
+PICTURE: gestapelte Karten in der Fachfarbe; die Lernkarte selbst gross und plastisch.
+COLOUR and TYPE: warmes Papier, tiefe Tinte, ein Blau als Akzent; Fächer in eigenen Farben. SF Pro Rounded für Titel.
+LAYOUT: eine ruhige Spalte bis 820px, Kacheln im Raster, auf dem iPhone alles untereinander.
+*/
+:root{
+  color-scheme:light dark;
+  --bg:#F4F1EC; --surface:#FFFFFF; --surface2:#FAF8F5; --ink:#1B1D22; --muted:#6C6F78; --line:#E6E1D9;
+  --accent:#3452D6; --accent-ink:#FFFFFF; --accent-soft:#E7EBFC;
+  --good:#1E8F62; --good-soft:#E2F4EC; --bad:#D4472F; --bad-soft:#FBE7E3; --warn-soft:#FFF4DD;
+  --shadow:0 1px 2px rgba(30,25,15,.06),0 8px 24px rgba(30,25,15,.08);
+  --shadow-lg:0 2px 4px rgba(30,25,15,.06),0 18px 48px rgba(30,25,15,.14);
+  --r:18px; --r-sm:12px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;
+  --round:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
+  --sl:env(safe-area-inset-left,0px); --sr:env(safe-area-inset-right,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#14161B; --surface:#1E2128; --surface2:#23262E; --ink:#ECEDF0; --muted:#9A9EA8; --line:#2E323B;
+    --accent:#7D93FF; --accent-ink:#0E1220; --accent-soft:#262E4D;
+    --good:#4CC892; --good-soft:#163328; --bad:#FF7A63; --bad-soft:#3A1F1B; --warn-soft:#3A3020;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3);
+    --shadow-lg:0 2px 4px rgba(0,0,0,.3),0 18px 48px rgba(0,0,0,.45);
+  }
+}
+*{box-sizing:border-box;min-width:0}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--font);overflow-x:clip;
+  -webkit-tap-highlight-color:transparent;min-height:100vh;min-height:100dvh}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-user-select:none;user-select:none}
+h1,h2,h3{font-family:var(--round);line-height:1.1;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h1{font-size:clamp(28px,5vw,40px);font-weight:700}
+h2{font-size:20px;font-weight:700}
+p{margin:0}
+.vh{position:absolute!important;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* Kopfleiste */
+.bar{position:sticky;top:0;z-index:20;padding:calc(var(--st) + 8px) calc(var(--sr) + 16px) 8px calc(var(--sl) + 16px);
+  background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:saturate(1.6) blur(16px);backdrop-filter:saturate(1.6) blur(16px);
+  border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.bar-in{max-width:820px;margin:0 auto;display:flex;align-items:center;gap:8px;min-height:44px}
+.bar-title{flex:1;font-family:var(--round);font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-title.center{text-align:center}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:28px;height:28px;border-radius:8px;background:var(--accent);position:relative;flex:none}
+.brand-mark::after{content:"";position:absolute;inset:7px 6px 9px 6px;border-radius:3px;background:var(--accent-ink);opacity:.95;transform:rotate(-6deg)}
+
+main{max-width:820px;margin:0 auto;padding:20px calc(var(--sr) + 16px) calc(var(--sb) + 40px) calc(var(--sl) + 16px)}
+
+/* Knöpfe */
+.btn{text-decoration:none;color:inherit;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:14px;
+  border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:16px;transition:transform .12s ease,background .15s;position:relative}
+.btn:active{transform:scale(.97)}
+.btn.primary,a.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.danger{color:var(--bad)}
+.btn.danger.fill{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.btn.wide{width:100%}
+.btn svg,.icon-btn svg{width:20px;height:20px;flex:none}
+.icon-btn{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:12px;border:0;background:transparent;color:var(--muted)}
+.icon-btn:active{background:var(--surface2)}
+.icon-btn.danger:active{color:var(--bad)}
+.back{display:inline-flex;align-items:center;gap:2px;min-height:44px;padding:0 10px 0 4px;border:0;background:transparent;color:var(--accent);font-weight:600;font-size:17px;border-radius:10px}
+.back svg{width:22px;height:22px}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:2px}
+
+/* Installationshinweis */
+.hint-box{display:flex;gap:12px;align-items:flex-start;background:var(--accent-soft);border-radius:var(--r);padding:14px 14px 14px 16px;margin-bottom:22px}
+.hint-box p{flex:1;font-size:15px}
+.hint-box b{font-weight:650}
+
+/* Startseite */
+.intro{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:6px 0 20px;flex-wrap:wrap}
+.intro p{color:var(--muted);margin-top:6px}
+.subjects{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:18px}
+.tile{position:relative;text-align:left;border:0;background:none;padding:0;min-height:150px;display:block}
+.tile .paper{position:absolute;inset:0;border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow);overflow:hidden;
+  display:flex;flex-direction:column;justify-content:space-between;padding:18px 18px 16px;transition:transform .2s ease}
+.tile .paper::before{content:"";position:absolute;left:0;right:0;top:0;height:8px;background:var(--c)}
+.tile .under{position:absolute;inset:0;border-radius:var(--r);background:color-mix(in srgb,var(--c) 30%,var(--surface));transform:translate(6px,8px) rotate(1.8deg)}
+.tile .under2{position:absolute;inset:0;border-radius:var(--r);background:color-mix(in srgb,var(--c) 16%,var(--surface));transform:translate(-4px,5px) rotate(-2.2deg)}
+.tile:active .paper{transform:translateY(-2px) rotate(-.6deg)}
+.tile-name{position:relative;font-family:var(--round);font-weight:700;font-size:20px;line-height:1.15;margin-top:6px;overflow-wrap:anywhere}
+.tile-meta{position:relative;color:var(--muted);font-size:14px}
+.tile-meta b{color:var(--ink);font-weight:650}
+.tile.add .paper{background:transparent;box-shadow:none;border:2px dashed var(--line);align-items:center;justify-content:center;color:var(--muted);font-weight:600;gap:6px}
+.tile.add .paper::before,.tile.add .paper::after{display:none}
+.tile.add svg{width:28px;height:28px}
+
+.empty{display:grid;justify-items:center;text-align:center;gap:14px;padding:40px 12px}
+.empty p{color:var(--muted);max-width:34ch}
+.deck-art{position:relative;width:190px;height:130px;margin-bottom:8px}
+.deck-art i{position:absolute;inset:0;border-radius:16px;background:var(--surface);box-shadow:var(--shadow)}
+.deck-art i:nth-child(1){background:#F0A23A;transform:rotate(-8deg) translate(-14px,6px)}
+.deck-art i:nth-child(2){background:#4FA77A;transform:rotate(5deg) translate(12px,2px)}
+.deck-art i:nth-child(3){transform:rotate(-1deg)}
+.deck-art i:nth-child(3)::before{content:"";position:absolute;left:20px;right:20px;top:34px;height:2px;border-radius:2px;background:var(--line);box-shadow:0 22px 0 var(--line),0 44px 0 var(--line)}
+.deck-art i:nth-child(3)::after{content:"";position:absolute;left:0;right:0;top:0;height:9px;border-radius:16px 16px 0 0;background:var(--accent)}
+
+/* Fachseite */
+.hero{position:relative;background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:24px 22px 22px;overflow:hidden;margin-bottom:28px}
+.hero::before{content:"";position:absolute;left:0;top:0;bottom:0;width:8px;background:var(--c)}
+.hero-top{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;margin-bottom:8px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
+.hero h1{overflow-wrap:anywhere}
+.hero .counts{color:var(--muted);margin-top:8px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.hero-actions .btn{flex:1 1 180px}
+.section-h{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px}
+.section-h span{color:var(--muted);font-size:14px}
+.clist{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.crow{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:var(--r-sm);padding:12px 6px 12px 16px;box-shadow:0 1px 2px rgba(30,25,15,.05);border:1px solid var(--line)}
+.crow-main{flex:1}
+.crow-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
+.tag svg{width:13px;height:13px}
+.tag.t-basic{background:color-mix(in srgb,#3D6FE0 14%,var(--surface));color:color-mix(in srgb,#3D6FE0 80%,var(--ink));border-color:transparent}
+.tag.t-single{background:color-mix(in srgb,#2A9D9F 15%,var(--surface));color:color-mix(in srgb,#2A9D9F 75%,var(--ink));border-color:transparent}
+.tag.t-multi{background:color-mix(in srgb,#7A5CD6 15%,var(--surface));color:color-mix(in srgb,#7A5CD6 80%,var(--ink));border-color:transparent}
+.tag.t-kprim{background:color-mix(in srgb,#F0A23A 20%,var(--surface));color:color-mix(in srgb,#B86E00 85%,var(--ink));border-color:transparent}
+.crow-q{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+
+/* Formular */
+.form{display:grid;gap:22px}
+.field{display:grid;gap:8px}
+.lbl{font-weight:650;font-size:15px}
+.sub{color:var(--muted);font-size:14px;margin-top:-4px}
+input[type=text],textarea,select{width:100%;font-size:16px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);
+  -webkit-appearance:none;appearance:none;line-height:1.45}
+textarea{resize:vertical;min-height:84px}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 20px) 52%,calc(100% - 14px) 52%;background-size:6px 6px;background-repeat:no-repeat;padding-right:40px;min-height:48px}
+input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,130px),1fr));gap:6px;background:var(--surface2);border:1px solid var(--line);padding:5px;border-radius:14px}
+.seg.two{grid-template-columns:1fr 1fr}
+.seg button{min-height:42px;border:0;border-radius:10px;background:transparent;font-weight:600;font-size:15px;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.opt-ed{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px;display:grid;gap:10px}
+.opt-head{display:flex;gap:8px;align-items:center}
+.opt-head input{flex:1}
+.mark{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:46px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface2);font-weight:600;font-size:14px;color:var(--muted)}
+.mark .ck{width:20px;height:20px;border-radius:6px;border:2px solid currentColor;display:grid;place-items:center}
+.mark.radio .ck{border-radius:50%}
+.mark.on{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.mark.on .ck{background:var(--good);border-color:var(--good)}
+.mark.on .ck::after{content:"";width:8px;height:5px;border:2.5px solid #fff;border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
+.truth{display:flex;gap:6px;flex:none}
+.truth button{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface2);font-weight:600;font-size:14px;color:var(--muted)}
+.truth button.on.t{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.truth button.on.f{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.kp-ed-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.kp-ed-top .num{font-family:var(--round);font-weight:700;color:var(--muted);width:22px}
+.kp-ed-top input{flex:1 1 220px}
+.att-list{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.att{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:4px 4px 4px 4px;border-radius:12px;background:var(--surface2);border:1px solid var(--line);font-size:14px}
+.att img{width:36px;height:36px;object-fit:cover;border-radius:8px;flex:none}
+.att .fi{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex:none}
+.att .fi svg{width:18px;height:18px}
+.att-name{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.att-x{width:34px;height:34px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-size:20px;line-height:1}
+.att-add{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border-radius:12px;border:1px dashed var(--line);color:var(--accent);font-weight:600;font-size:14px;cursor:pointer}
+.att-add svg{width:17px;height:17px}
+.form-actions{display:flex;gap:10px;flex-wrap:wrap;position:sticky;bottom:0;padding:12px 0 calc(var(--sb) + 12px);background:linear-gradient(to bottom,transparent,var(--bg) 30%)}
+.form-actions .btn{flex:1 1 150px}
+.err{background:var(--bad-soft);color:var(--bad);border-radius:12px;padding:12px 14px;font-weight:600;font-size:15px}
+
+/* Lernmodus */
+.learn-top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.progress{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--c,var(--accent));border-radius:99px;transition:width .35s ease}
+.count{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px;white-space:nowrap}
+.stage{perspective:1600px}
+.flip{display:grid;cursor:pointer;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,.7,.2,1);min-height:min(56vh,420px);position:relative}
+.flip.is-flipped{transform:rotateY(180deg)}
+.face{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--surface);border-radius:24px;box-shadow:var(--shadow-lg);
+  padding:28px 24px 24px;display:flex;flex-direction:column;gap:16px;position:relative;overflow:hidden}
+.face::before{content:"";position:absolute;left:0;right:0;top:0;height:8px;background:var(--c,var(--accent))}
+.face.back{transform:rotateY(180deg)}
+.face.back{background:linear-gradient(var(--surface),var(--surface2))}
+.face-tag{font-size:13px;font-weight:650;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qtext{font-family:var(--round);font-size:clamp(21px,3.4vw,27px);font-weight:650;line-height:1.3;white-space:pre-wrap;overflow-wrap:anywhere}
+.atext{font-size:clamp(18px,2.8vw,21px);line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.face .grow{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px}
+.tap-hint{color:var(--muted);font-size:14px;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
+.tap-hint svg{width:16px;height:16px}
+.qcard{background:var(--surface);border-radius:24px;box-shadow:var(--shadow-lg);padding:28px 22px 22px;display:flex;flex-direction:column;gap:18px;position:relative;overflow:hidden}
+.qcard::before{content:"";position:absolute;left:0;right:0;top:0;height:8px;background:var(--c,var(--accent))}
+.opts{display:grid;gap:10px}
+.opt{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;padding:14px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface2);font-size:17px;line-height:1.4;transition:border-color .15s,background .15s}
+.opt .box{width:24px;height:24px;flex:none;border-radius:7px;border:2px solid var(--muted);margin-top:1px;display:grid;place-items:center}
+.opt.radio .box{border-radius:50%}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.opt.sel .box{border-color:var(--accent);background:var(--accent)}
+.opt.sel .box::after{content:"";width:9px;height:5px;border:2.5px solid var(--accent-ink);border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
+.opt.radio.sel .box::after{width:8px;height:8px;border:0;border-radius:50%;background:var(--accent-ink);transform:none}
+.opt .otext{flex:1;white-space:pre-wrap;overflow-wrap:anywhere}
+.opt:disabled{cursor:default;opacity:1}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.right .box{border-color:var(--good);background:var(--good)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.wrong .box{border-color:var(--bad);background:var(--bad)}
+.opt.missed{border-style:dashed;border-color:var(--good)}
+.opt .verdict{font-size:13px;font-weight:700;white-space:nowrap;margin-top:3px}
+.opt.right .verdict,.opt.missed .verdict{color:var(--good)}
+.opt.wrong .verdict{color:var(--bad)}
+.kp-row{border:1.5px solid var(--line);background:var(--surface2);border-radius:14px;padding:12px 12px 12px 14px;display:grid;gap:10px}
+.kp-main{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.kp-text{flex:1 1 220px;font-size:17px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere}
+.kp-row.right{border-color:var(--good);background:var(--good-soft)}
+.kp-row.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.pill-group{display:flex;gap:6px;flex:none}
+.pill{min-height:44px;min-width:84px;padding:0 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-weight:650;font-size:15px;color:var(--muted)}
+.pill.on.t{border-color:var(--good);color:var(--good);background:var(--surface)}
+.pill.on.f{border-color:var(--bad);color:var(--bad);background:var(--surface)}
+.pill.on.t{box-shadow:inset 0 0 0 1.5px var(--good)}
+.pill.on.f{box-shadow:inset 0 0 0 1.5px var(--bad)}
+.pill:disabled{cursor:default}
+.expl{border-radius:12px;padding:12px 14px;display:grid;gap:6px;font-size:15.5px;line-height:1.5}
+.expl.bad{background:var(--bad-soft);border-left:4px solid var(--bad)}
+.expl.good{background:var(--good-soft);border-left:4px solid var(--good)}
+.kp-row .expl{background:var(--surface)}
+.expl-h{font-weight:700;font-size:14px}
+.expl.bad .expl-h{color:var(--bad)}
+.expl.good .expl-h{color:var(--good)}
+.expl-t{white-space:pre-wrap;overflow-wrap:anywhere}
+.banner{display:flex;align-items:center;gap:12px;border-radius:14px;padding:14px 16px;font-weight:700;font-size:17px}
+.banner.good{background:var(--good-soft);color:var(--good)}
+.banner.bad{background:var(--bad-soft);color:var(--bad)}
+.banner.mid{background:var(--warn-soft);color:color-mix(in srgb,#B86E00 85%,var(--ink))}
+.banner small{display:block;font-weight:600;font-size:14px;opacity:.9}
+.rate{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.rate .btn{min-height:56px;font-size:17px;border-radius:16px}
+.rate .again{background:var(--surface);border-color:var(--line);color:var(--bad)}
+.rate .known{background:var(--good);border-color:var(--good);color:#fff}
+.rate .suggest{box-shadow:0 0 0 3px color-mix(in srgb,currentColor 25%,transparent)}
+.rate.hide{display:none}
+
+/* Medien */
+.media-row{display:grid;gap:10px}
+.media img{display:block;max-width:100%;max-height:46vh;border-radius:12px;margin:0 auto;cursor:zoom-in;background:var(--surface2)}
+.media video{display:block;width:100%;max-height:50vh;border-radius:12px;background:#000}
+.file-chip{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);text-align:left;font-weight:600;font-size:15px}
+.file-chip .fi{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex:none}
+.file-chip .fi svg{width:18px;height:18px}
+.file-chip span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Abschluss */
+.done{display:grid;justify-items:center;text-align:center;gap:16px;padding:24px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;width:100%;margin:8px 0}
+.stat{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:18px 14px;display:grid;gap:4px}
+.stat b{font-family:var(--round);font-size:32px;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat span{color:var(--muted);font-size:14px}
+.done-actions{display:flex;gap:10px;flex-wrap:wrap;width:100%}
+.done-actions .btn{flex:1 1 200px}
+
+/* Overlays */
+.overlay{position:fixed;inset:0;z-index:50;display:grid;align-items:end;justify-items:center;background:rgba(10,10,15,.42);
+  padding:calc(var(--st) + 20px) 0 0;animation:fade .18s ease}
+.sheet{width:min(560px,100%);max-height:calc(100dvh - var(--st) - 20px);overflow:auto;background:var(--surface);border-radius:24px 24px 0 0;
+  padding:24px calc(var(--sr) + 20px) calc(var(--sb) + 22px) calc(var(--sl) + 20px);box-shadow:var(--shadow-lg);display:grid;gap:16px;animation:up .25s cubic-bezier(.3,.7,.2,1)}
+@media (min-width:700px){.overlay{align-items:center;padding:24px}.sheet{border-radius:24px;padding:26px}}
+.sheet p{color:var(--muted)}
+.sheet-actions{display:flex;gap:10px;flex-wrap:wrap}
+.sheet-actions .btn{flex:1 1 140px}
+.swatches{display:flex;flex-wrap:wrap;gap:10px}
+.swatch{width:44px;height:44px;border-radius:50%;border:3px solid var(--surface);background:var(--c);box-shadow:0 0 0 1px var(--line)}
+.swatch.on{box-shadow:0 0 0 3px var(--ink)}
+.lightbox{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.9);display:grid;place-items:center;padding:calc(var(--st) + 16px) 16px calc(var(--sb) + 16px);animation:fade .15s ease}
+.lightbox img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
+.lightbox .icon-btn{position:absolute;top:calc(var(--st) + 10px);right:calc(var(--sr) + 10px);background:rgba(255,255,255,.15);color:#fff}
+.viewer{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;animation:fade .15s ease}
+.viewer-bar{display:flex;align-items:center;gap:8px;padding:calc(var(--st) + 8px) calc(var(--sr) + 12px) 8px calc(var(--sl) + 12px);border-bottom:1px solid var(--line)}
+.viewer-bar .t{flex:1;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.viewer-body{flex:1;display:grid;place-items:center;padding:16px;overflow:auto;-webkit-overflow-scrolling:touch}
+.viewer iframe{width:100%;height:100%;border:0;background:#fff;border-radius:8px}
+.toast{position:fixed;left:50%;bottom:calc(var(--sb) + 22px);transform:translateX(-50%);z-index:70;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;font-weight:600;font-size:15px;box-shadow:var(--shadow-lg);max-width:calc(100% - 32px);animation:up .2s ease}
+.store-info{font-size:14px;color:var(--muted);display:grid;gap:2px}
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(24px);opacity:0}}
+.toast{animation:toast .2s ease}
+@keyframes toast{from{opacity:0;transform:translate(-50%,12px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:520px){
+  main{padding-top:14px}
+  .face,.qcard{padding:24px 18px 18px;border-radius:20px}
+  .opt-head{flex-wrap:wrap}
+  .opt-head input{flex:1 1 100%;order:-1}
+  .mark{flex:1}
+  .kp-main .pill-group{width:100%}
+  .kp-main .pill{flex:1}
+  .rate .btn{font-size:16px}
+}
+</style>
+</head>
+<body>
+<header class="bar" id="bar"></header>
+<main id="main"></main>
+<div id="layer"></div>
+<script>
+{
+'use strict';
+const $ = s => document.querySelector(s);
+const barEl = $('#bar'), mainEl = $('#main'), layer = $('#layer');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => (self.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+const COLORS = ['#F26B4E','#F0A23A','#4FA77A','#2A9D9F','#3D6FE0','#7A5CD6','#E0589A','#5A6070'];
+const safeColor = c => COLORS.includes(c) ? c : COLORS[4];
+const TYPE_NAMES = {basic:'Karteikarte', single:'Single Choice', multi:'Multiple Choice', kprim:'K-prim'};
+const TYPES = Object.keys(TYPE_NAMES);
+const ua = navigator.userAgent;
+const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isIPhone = /iPhone|iPod/.test(ua);
+const isMac = !isIOS && /Macintosh/.test(ua);
+const isSafari = /Safari/.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS|Edg\//.test(ua);
+const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+const ls = { get(k){ try { return localStorage.getItem(k) } catch { return null } }, set(k,v){ try { localStorage.setItem(k,v) } catch {} } };
+
+/* Texte auf der Karte in der Sprache der Karte */
+const L = {
+  de:{question:'Frage', answer:'Antwort', tap:'Zum Umdrehen tippen oder klicken', tapBack:'Nochmal tippen, um zur Frage zurückzukehren', known:'Gewusst', again:'Nochmal üben',
+    check:'Antwort prüfen', chooseOne:'Wähle eine Antwort', chooseMany:'Wähle alle richtigen Antworten', judgeAll:'Beurteile jede Aussage',
+    t:'richtig', f:'falsch', right:'Richtig', wrong:'Falsch', allRight:'Richtig!', notRight:'Leider falsch', partly:'Nicht ganz',
+    whyWrong:'Warum deine Wahl falsch ist', whyRight:'Warum das richtig ist', missed:'Diese richtige Antwort hast du nicht gewählt',
+    stmtTrue:'Die Aussage ist richtig', stmtFalse:'Die Aussage ist falsch', noExpl:'Zu dieser Option ist keine Erklärung hinterlegt.',
+    of:'von', correctJudged:'richtig beurteilt', point:'Punkt', points:'Punkte', yourPick:'deine Wahl', correctLbl:'richtig', wrongLbl:'falsch',
+    basic:'Karteikarte', single:'Single Choice', multi:'Multiple Choice', kprim:'K-prim', dec:','},
+  en:{question:'Question', answer:'Answer', tap:'Tap or click to flip', tapBack:'Tap again to return to the question', known:'Got it', again:'Practise again',
+    check:'Check answer', chooseOne:'Choose one answer', chooseMany:'Choose all correct answers', judgeAll:'Judge each statement',
+    t:'true', f:'false', right:'Correct', wrong:'Incorrect', allRight:'Correct!', notRight:'Not correct', partly:'Not quite',
+    whyWrong:'Why your choice is wrong', whyRight:'Why this is correct', missed:'You did not select this correct answer',
+    stmtTrue:'The statement is true', stmtFalse:'The statement is false', noExpl:'No explanation has been added for this option.',
+    of:'of', correctJudged:'judged correctly', point:'point', points:'points', yourPick:'your choice', correctLbl:'correct', wrongLbl:'incorrect',
+    basic:'Flashcard', single:'Single choice', multi:'Multiple choice', kprim:'K-prim', dec:'.'}
+};
+const num = (n, lang) => String(n).replace('.', L[lang].dec);
+
+/* Symbole */
+const I = {
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>',
+  clip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5l-8.6 8.6a5 5 0 01-7.1-7.1l8.6-8.6a3.3 3.3 0 014.7 4.7l-8.6 8.6a1.7 1.7 0 01-2.4-2.4l7.9-7.9"/></svg>',
+  file:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>',
+  flip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0115.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 01-15.5 6.2L3 16M3 21v-5h5"/></svg>',
+  close:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  box:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
+  share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 8l5-5 5 5M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>'
+};
+
+/* ---------- Speicher (IndexedDB) ---------- */
+let dbPromise;
+function db(){
+  if (!dbPromise) dbPromise = new Promise((res, rej) => {
+    const r = indexedDB.open('karteikarten', 1);
+    r.onupgradeneeded = () => { const d = r.result;
+      ['subjects','cards','media'].forEach(n => { if (!d.objectStoreNames.contains(n)) d.createObjectStore(n, {keyPath:'id'}) }); };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+  return dbPromise;
+}
+async function run(name, mode, fn){
+  const d = await db();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(name, mode), st = tx.objectStore(name);
+    let out; const r = fn(st);
+    if (r) r.onsuccess = () => { out = r.result };
+    tx.oncomplete = () => res(out);
+    tx.onerror = () => rej(tx.error);
+    tx.onabort = () => rej(tx.error || new Error('Abgebrochen'));
+  });
+}
+const all = n => run(n, 'readonly', s => s.getAll());
+const get = (n, k) => run(n, 'readonly', s => s.get(k));
+const put = (n, v) => run(n, 'readwrite', s => s.put(v));
+const del = (n, k) => run(n, 'readwrite', s => s.delete(k));
+async function putMany(n, list){ return run(n, 'readwrite', s => { list.forEach(v => s.put(v)) }) }
+
+/* ---------- Zustand ---------- */
+const state = { subjects:[], cards:[], view:{name:'home'}, draft:null, session:null, err:'' };
+const subj = id => state.subjects.find(s => s.id === id);
+const cardById = id => state.cards.find(c => c.id === id);
+const cardsOf = sid => state.cards.filter(c => c.subjectId === sid).sort((a,b) => a.created - b.created);
+
+/* ---------- Anzeige von Anhängen ---------- */
+const mediaCache = new Map();
+async function mediaURL(id){
+  if (mediaCache.has(id)) return mediaCache.get(id);
+  const m = await get('media', id);
+  if (!m) return null;
+  const r = {url: URL.createObjectURL(new Blob([m.data], {type:m.type})), type:m.type, name:m.name, data:m.data};
+  mediaCache.set(id, r); return r;
+}
+function mediaBlock(list){
+  if (!list || !list.length) return '';
+  return `<div class="media-row">${list.map(m => `<div class="media" data-mid="${esc(m.id)}"></div>`).join('')}</div>`;
+}
+function hydrate(root){
+  root.querySelectorAll('[data-mid]:not([data-ready])').forEach(async el => {
+    el.dataset.ready = '1';
+    const r = await mediaURL(el.dataset.mid);
+    el.textContent = '';
+    if (!r) { el.textContent = 'Anhang nicht gefunden'; el.className = 'muted small'; return }
+    if (r.type.startsWith('image/')) {
+      const img = document.createElement('img'); img.src = r.url; img.alt = r.name; img.loading = 'lazy';
+      img.dataset.action = 'view-img'; img.dataset.id = el.dataset.mid; el.appendChild(img);
+    } else if (r.type.startsWith('video/')) {
+      const v = document.createElement('video'); v.src = r.url; v.controls = true; v.playsInline = true; v.preload = 'metadata';
+      v.setAttribute('playsinline', ''); el.dataset.action = 'noop'; el.appendChild(v);
+    } else {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'file-chip';
+      b.dataset.action = 'view-file'; b.dataset.id = el.dataset.mid;
+      b.innerHTML = `<span class="fi">${I.file}</span><span></span>`;
+      b.lastChild.textContent = r.name; el.appendChild(b);
+    }
+  });
+}
+
+/* ---------- Kleine Hilfen ---------- */
+let toastTimer;
+function toast(msg){
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; t.setAttribute('role','status');
+  document.body.appendChild(t); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), 2600);
+}
+let modalResolve = null;
+function openSheet(html){
+  layer.innerHTML = `<div class="overlay" data-action="close-sheet"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;
+  const f = layer.querySelector('[autofocus]'); if (f && !isIOS) f.focus();
+}
+function closeSheet(val){ layer.innerHTML = ''; if (modalResolve) { const r = modalResolve; modalResolve = null; r(val) } }
+function ask({title, text, ok='OK', danger=false}){
+  return new Promise(res => {
+    if (modalResolve) modalResolve(false);
+    openSheet(`<h2>${esc(title)}</h2>${text ? `<p>${esc(text)}</p>` : ''}
+      <div class="sheet-actions"><button class="btn" data-action="sheet-no">Abbrechen</button>
+      <button class="btn ${danger ? 'danger fill' : 'primary'}" data-action="sheet-yes">${esc(ok)}</button></div>`);
+    modalResolve = res;
+  });
+}
+function go(view){ state.view = view; state.err = ''; render(); window.scrollTo(0, 0) }
+
+/* ---------- Ansichten ---------- */
+function render(){
+  const v = state.view.name;
+  ({home:viewHome, subject:viewSubject, edit:viewEdit, learn:viewLearn, done:viewDone})[v]();
+  hydrate(mainEl);
+}
+
+function installHint(){
+  if (standalone || ls.get('hint-closed')) return '';
+  let txt;
+  if (isIOS && isSafari) txt = `<b>Als App installieren:</b> Tippe in Safari auf «Teilen» und dann auf «Zum Home-Bildschirm».`;
+  else if (isIOS) txt = `<b>Als App installieren:</b> Öffne diese Seite in Safari, tippe auf «Teilen» und dann auf «Zum Home-Bildschirm».`;
+  else if (isMac && isSafari) txt = `<b>Als App installieren:</b> Wähle in Safari oben im Menü «Ablage» → «Zum Dock hinzufügen».`;
+  else if (isMac) txt = `<b>Als App installieren:</b> Öffne diese Seite in Safari und wähle «Ablage» → «Zum Dock hinzufügen».`;
+  else txt = `<b>Als App installieren:</b> Öffne diese Seite in Safari und füge sie zum Home-Bildschirm bzw. zum Dock hinzu.`;
+  return `<div class="hint-box"><p>${txt} Lege deine Karten erst danach in der installierten App an: Sie hat einen eigenen Speicher, getrennt vom Browser.</p>
+    <button class="icon-btn" data-action="close-hint" aria-label="Hinweis schliessen">${I.close}</button></div>`;
+}
+
+function viewHome(){
+  barEl.innerHTML = `<div class="bar-in"><div class="bar-title brand"><span class="brand-mark"></span>Karteikarten</div>
+    <button class="btn ghost" data-action="backup" style="color:var(--accent)">${I.box}Backup</button></div>`;
+  const s = state.subjects;
+  if (!s.length) {
+    mainEl.innerHTML = installHint() + `<div class="empty"><div class="deck-art"><i></i><i></i><i></i></div>
+      <h1>Willkommen</h1><p>Lege zuerst ein Fach an, zum Beispiel «Biologische Psychologie». Darin sammelst du deine Karten.</p>
+      <button class="btn primary" data-action="new-subject">${I.plus}Erstes Fach anlegen</button></div>`;
+    return;
+  }
+  const total = state.cards.length;
+  mainEl.innerHTML = installHint() + `<div class="intro"><div><h1>Deine Fächer</h1>
+      <p>${s.length} ${s.length === 1 ? 'Fach' : 'Fächer'} · ${total} ${total === 1 ? 'Karte' : 'Karten'}</p></div></div>
+    <div class="subjects">${s.map(x => { const n = cardsOf(x.id).length; return `
+      <button class="tile" data-action="open-subject" data-id="${esc(x.id)}" style="--c:${safeColor(x.color)}">
+        <span class="under2"></span><span class="under"></span>
+        <span class="paper"><span class="tile-name">${esc(x.name)}</span><span class="tile-meta"><b>${n}</b> ${n === 1 ? 'Karte' : 'Karten'}</span></span>
+      </button>` }).join('')}
+      <button class="tile add" data-action="new-subject"><span class="paper">${I.plus}Neues Fach</span></button>
+    </div>`;
+}
+
+function viewSubject(){
+  const s = subj(state.view.id); if (!s) return go({name:'home'});
+  const cs = cardsOf(s.id), c = safeColor(s.color);
+  barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="home">${I.back}Fächer</button><div class="bar-title"></div></div>`;
+  const byType = TYPES.map(t => [t, cs.filter(x => x.type === t).length]).filter(x => x[1]).map(([t, n]) => `${n} ${TYPE_NAMES[t]}`).join(' · ');
+  mainEl.innerHTML = `<section class="hero" style="--c:${c}">
+      <div class="hero-top"><span class="dot"></span>Fach</div>
+      <h1>${esc(s.name)}</h1>
+      <p class="counts">${cs.length ? `${cs.length} ${cs.length === 1 ? 'Karte' : 'Karten'} · ${esc(byType)}` : 'Noch keine Karten'}</p>
+      <div class="hero-actions">
+        <button class="btn primary" data-action="learn" ${cs.length ? '' : 'disabled'}>Lernen starten</button>
+        <button class="btn" data-action="new-card">${I.plus}Neue Karte</button>
+      </div></section>
+    <div class="section-h"><h2>Karten</h2><span>${cs.length}</span></div>
+    ${cs.length ? `<ul class="clist">${cs.map(cardRow).join('')}</ul>`
+      : `<div class="empty" style="padding:24px 12px"><p>Hier erscheinen deine Karten. Tippe auf «Neue Karte», um die erste anzulegen.</p></div>`}`;
+}
+function countMedia(c){ return (c.qMedia||[]).length + (c.aMedia||[]).length + (c.options||[]).reduce((n,o) => n + (o.media||[]).length, 0) }
+function cardRow(c){
+  const m = countMedia(c);
+  return `<li class="crow"><div class="crow-main">
+    <div class="crow-tags"><span class="tag t-${esc(c.type)}">${esc(TYPE_NAMES[c.type] || '')}</span><span class="tag">${c.lang === 'en' ? 'EN' : 'DE'}</span>
+    ${m ? `<span class="tag">${I.clip}${m}</span>` : ''}</div>
+    <div class="crow-q">${esc(c.question) || '<span class="muted">(nur Anhang)</span>'}</div></div>
+    <button class="icon-btn danger" data-action="del-card" data-id="${esc(c.id)}" aria-label="Karte löschen">${I.trash}</button></li>`;
+}
+
+/* ---------- Formular für neue Karten ---------- */
+const blankOpt = () => ({text:'', correct:false, explanation:'', media:[]});
+function newDraft(subjectId, type, lang){
+  return {subjectId, type: type || 'basic', lang: lang || ls.get('last-lang') || 'de', question:'', qMedia:[], answer:'', aMedia:[],
+    options: type === 'kprim' ? [0,1,2,3].map(() => ({...blankOpt(), correct:null})) : [0,1,2,3].map(blankOpt)};
+}
+const previews = new WeakMap();
+const previewURL = f => { if (!previews.has(f)) previews.set(f, URL.createObjectURL(f)); return previews.get(f) };
+function draftMedia(key){ const d = state.draft; return key === 'q' ? d.qMedia : key === 'a' ? d.aMedia : d.options[+key.slice(1)].media }
+function mediaEditor(key, label){
+  const list = draftMedia(key);
+  return `<div class="att-list">${list.map((f, i) => `<span class="att">
+      ${f.type && f.type.startsWith('image/') ? `<img src="${previewURL(f)}" alt="">` : `<span class="fi">${I.file}</span>`}
+      <span class="att-name">${esc(f.name || 'Datei')}</span>
+      <button type="button" class="att-x" data-action="rm-media" data-key="${key}" data-i="${i}" aria-label="Anhang entfernen">×</button></span>`).join('')}
+    <label class="att-add">${I.clip}${label}<input type="file" multiple class="vh" data-media="${key}"></label></div>`;
+}
+function viewEdit(){
+  const d = state.draft, s = subj(d.subjectId);
+  barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="cancel-edit">${I.back}Abbrechen</button>
+    <div class="bar-title center">Neue Karte</div><div style="width:92px"></div></div>`;
+  const opts = d.type === 'single' || d.type === 'multi';
+  mainEl.innerHTML = `<form class="form" data-form="card" style="--c:${safeColor(s && s.color)}" novalidate>
+    <div class="field"><label class="lbl" for="f-s">Fach</label>
+      <select id="f-s" data-bind="subjectId">${state.subjects.map(x => `<option value="${esc(x.id)}" ${x.id === d.subjectId ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>
+    <div class="field"><span class="lbl">Kartentyp</span>
+      <div class="seg">${TYPES.map(t => `<button type="button" class="${d.type === t ? 'on' : ''}" data-action="set-type" data-t="${t}">${TYPE_NAMES[t]}</button>`).join('')}</div></div>
+    <div class="field"><span class="lbl">Sprache der Karte</span>
+      <div class="seg two"><button type="button" class="${d.lang === 'de' ? 'on' : ''}" data-action="set-lang" data-l="de">Deutsch</button>
+      <button type="button" class="${d.lang === 'en' ? 'on' : ''}" data-action="set-lang" data-l="en">English</button></div></div>
+    <div class="field"><label class="lbl" for="f-q">${d.type === 'kprim' ? 'Frage bzw. Einleitung' : 'Frage'}</label>
+      <textarea id="f-q" rows="3" data-bind="question" placeholder="${d.lang === 'en' ? 'e.g. What does the hippocampus do?' : 'z. B. Welche Funktion hat der Hippocampus?'}">${esc(d.question)}</textarea>
+      ${mediaEditor('q', 'Anhang zur Frage')}</div>
+    ${d.type === 'basic' ? `<div class="field"><label class="lbl" for="f-a">Antwort (Rückseite)</label>
+      <textarea id="f-a" rows="4" data-bind="answer">${esc(d.answer)}</textarea>${mediaEditor('a', 'Anhang zur Antwort')}</div>` : ''}
+    ${opts ? `<div class="field"><span class="lbl">Antwortoptionen</span>
+      <p class="sub">${d.type === 'single' ? 'Markiere genau eine Antwort als richtig.' : 'Markiere alle richtigen Antworten (mindestens eine).'} Schreibe zu jeder Option, warum sie richtig oder falsch ist.</p>
+      ${d.options.map((o, i) => `<div class="opt-ed"><div class="opt-head">
+          <button type="button" class="mark ${d.type === 'single' ? 'radio' : ''} ${o.correct ? 'on' : ''}" data-action="toggle-correct" data-i="${i}" aria-pressed="${!!o.correct}"><span class="ck"></span>richtig</button>
+          <input type="text" data-bind="opt.${i}.text" value="${esc(o.text)}" placeholder="Antwort ${String.fromCharCode(65 + i)}" aria-label="Antwort ${String.fromCharCode(65 + i)}">
+          ${d.options.length > 2 ? `<button type="button" class="icon-btn" data-action="rm-opt" data-i="${i}" aria-label="Option entfernen">${I.close}</button>` : ''}</div>
+        <textarea rows="2" data-bind="opt.${i}.explanation" placeholder="Erklärung: Warum ist diese Antwort richtig bzw. falsch?" aria-label="Erklärung zu Antwort ${String.fromCharCode(65 + i)}">${esc(o.explanation)}</textarea>
+        ${mediaEditor('o' + i, 'Anhang zur Erklärung')}</div>`).join('')}
+      ${d.options.length < 8 ? `<button type="button" class="btn" data-action="add-opt">${I.plus}Option hinzufügen</button>` : ''}</div>` : ''}
+    ${d.type === 'kprim' ? `<div class="field"><span class="lbl">Vier Aussagen</span>
+      <p class="sub">Lege bei jeder Aussage fest, ob sie richtig oder falsch ist, und erkläre warum.</p>
+      ${d.options.map((o, i) => `<div class="opt-ed"><div class="kp-ed-top"><span class="num">${i + 1}</span>
+          <input type="text" data-bind="opt.${i}.text" value="${esc(o.text)}" placeholder="Aussage ${i + 1}" aria-label="Aussage ${i + 1}">
+          <div class="truth"><button type="button" class="t ${o.correct === true ? 'on' : ''}" data-action="set-truth" data-i="${i}" data-v="1">richtig</button>
+          <button type="button" class="f ${o.correct === false ? 'on' : ''}" data-action="set-truth" data-i="${i}" data-v="0">falsch</button></div></div>
+        <textarea rows="2" data-bind="opt.${i}.explanation" placeholder="Erklärung: Warum ist diese Aussage richtig bzw. falsch?" aria-label="Erklärung zu Aussage ${i + 1}">${esc(o.explanation)}</textarea>
+        ${mediaEditor('o' + i, 'Anhang zur Erklärung')}</div>`).join('')}</div>` : ''}
+    ${state.err ? `<div class="err" role="alert">${esc(state.err)}</div>` : ''}
+    <div class="form-actions"><button type="button" class="btn" data-action="save-card" data-again="1">Speichern &amp; nächste</button>
+      <button type="button" class="btn primary" data-action="save-card">Speichern</button></div>
+  </form>`;
+}
+function setType(t){
+  const d = state.draft, from = d.type; if (t === from) return;
+  let o = d.options.map(x => ({...x}));
+  if (t === 'kprim') {
+    while (o.length < 4) o.push(blankOpt());
+    o = o.slice(0, 4);
+    if (from !== 'kprim') o.forEach(x => x.correct = x.correct ? true : null);
+  } else if (from === 'kprim') {
+    o.forEach(x => x.correct = x.correct === true);
+  }
+  if (t === 'single' && o.filter(x => x.correct).length > 1) o.forEach(x => x.correct = false);
+  d.options = o; d.type = t; state.err = ''; render();
+}
+function validate(d){
+  if (!d.question.trim() && !d.qMedia.length) return 'Bitte schreibe eine Frage.';
+  if (d.type === 'basic') { if (!d.answer.trim() && !d.aMedia.length) return 'Bitte schreibe eine Antwort für die Rückseite.'; return '' }
+  if (d.options.some(o => !o.text.trim())) return d.type === 'kprim' ? 'Bitte fülle alle vier Aussagen aus.' : 'Bitte fülle alle Antwortoptionen aus oder entferne leere.';
+  const n = d.options.filter(o => o.correct === true).length;
+  if (d.type === 'single' && n !== 1) return 'Bitte markiere genau eine Antwort als richtig.';
+  if (d.type === 'multi' && n < 1) return 'Bitte markiere mindestens eine richtige Antwort.';
+  if (d.type === 'kprim' && d.options.some(o => o.correct !== true && o.correct !== false)) return 'Bitte lege bei jeder Aussage fest, ob sie richtig oder falsch ist.';
+  return '';
+}
+let saving = false;
+async function saveDraft(again){
+  if (saving) return;
+  const d = state.draft, e = validate(d);
+  if (e) { state.err = e; render(); const el = mainEl.querySelector('.err'); el && el.scrollIntoView({block:'center', behavior:'smooth'}); return }
+  saving = true;
+  const created = [];
+  const storeFiles = async list => {
+    const out = [];
+    for (const f of list) {
+      const id = uid(), type = f.type || 'application/octet-stream', name = f.name || 'Datei';
+      await put('media', {id, name, type, size:f.size, data: await f.arrayBuffer()});
+      created.push(id); out.push({id, name, type});
+    }
+    return out;
+  };
+  try {
+    const c = {id:uid(), subjectId:d.subjectId, type:d.type, lang:d.lang, question:d.question.trim(), qMedia: await storeFiles(d.qMedia),
+      created: Date.now(), stats:{known:0, again:0}};
+    if (d.type === 'basic') { c.answer = d.answer.trim(); c.aMedia = await storeFiles(d.aMedia) }
+    else { c.options = []; for (const o of d.options) c.options.push({text:o.text.trim(), correct:o.correct === true, explanation:o.explanation.trim(), media: await storeFiles(o.media)}) }
+    await put('cards', c);
+    state.cards.push(c); ls.set('last-lang', d.lang);
+    toast('Karte gespeichert');
+    if (again) { state.draft = newDraft(d.subjectId, d.type, d.lang); state.err = ''; render(); window.scrollTo(0, 0) }
+    else { state.draft = null; go({name:'subject', id:d.subjectId}) }
+  } catch (err) {
+    for (const id of created) await del('media', id).catch(() => {});
+    state.err = (err && err.name === 'QuotaExceededError') ? 'Der Speicher auf diesem Gerät ist voll. Entferne grosse Videos oder lösche alte Karten.' : 'Speichern hat nicht geklappt. Bitte versuche es noch einmal.';
+    render();
+  } finally { saving = false }
+}
+
+/* ---------- Lernmodus ---------- */
+function startLearn(sid){
+  const ids = cardsOf(sid).map(c => c.id);
+  if (!ids.length) return;
+  state.session = {sid, queue:ids, total:ids.length, done:0, known:0, again:0, pts:0, maxPts:0, seen:new Set(), cur:null};
+  nextCard();
+}
+function nextCard(){
+  const s = state.session;
+  while (s.queue.length && !cardById(s.queue[0])) s.queue.shift();
+  if (!s.queue.length) return go({name:'done'});
+  s.cur = {id:s.queue[0], flipped:false, ever:false, checked:false, sel:[], judge:[null, null, null, null], result:null};
+  go({name:'learn'});
+}
+function viewLearn(){
+  const s = state.session, c = cardById(s.cur.id), sb = subj(s.sid), lang = c.lang === 'en' ? 'en' : 'de', T = L[lang], cur = s.cur;
+  const color = safeColor(sb && sb.color);
+  barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="end-learn">${I.back}Beenden</button><div class="bar-title center"></div><div style="width:92px"></div></div>`;
+  barEl.querySelector('.bar-title').textContent = sb ? sb.name : '';
+  const pct = Math.round(s.done / s.total * 100);
+  let body = '';
+  const tag = `<div class="face-tag"><span class="tag t-${c.type}">${T[c.type]}</span>`;
+  if (c.type === 'basic') {
+    body = `<div class="stage" lang="${lang}"><div class="flip ${cur.flipped ? 'is-flipped' : ''}" data-action="flip" role="button" tabindex="0" aria-label="${T.tap}">
+      <div class="face front">${tag}<span>${T.question}</span></div>
+        <div class="grow"><div class="qtext">${esc(c.question)}</div>${mediaBlock(c.qMedia)}</div>
+        <div class="tap-hint">${I.flip}${T.tap}</div></div>
+      <div class="face back">${tag}<span>${T.answer}</span></div>
+        <div class="grow"><div class="atext">${esc(c.answer)}</div>${mediaBlock(c.aMedia)}</div>
+        <div class="tap-hint">${I.flip}${T.tapBack}</div></div>
+    </div></div>`;
+  } else {
+    const sub = c.type === 'single' ? T.chooseOne : c.type === 'multi' ? T.chooseMany : T.judgeAll;
+    let inner = '';
+    if (c.type === 'kprim') {
+      inner = `<div class="opts">${c.options.map((o, i) => {
+        const j = cur.judge[i], ok = cur.checked && j === o.correct, bad = cur.checked && j !== o.correct;
+        return `<div class="kp-row ${ok ? 'right' : ''} ${bad ? 'wrong' : ''}"><div class="kp-main"><div class="kp-text">${esc(o.text)}</div>
+          <div class="pill-group"><button type="button" class="pill t ${j === true ? 'on' : ''}" data-action="judge" data-i="${i}" data-v="1" ${cur.checked ? 'disabled' : ''}>${T.t}</button>
+          <button type="button" class="pill f ${j === false ? 'on' : ''}" data-action="judge" data-i="${i}" data-v="0" ${cur.checked ? 'disabled' : ''}>${T.f}</button></div></div>
+          ${bad ? explBlock(o.correct ? 'good' : 'bad', o.correct ? T.stmtTrue : T.stmtFalse, o, T) : ''}</div>`;
+      }).join('')}</div>`;
+    } else {
+      const radio = c.type === 'single' ? 'radio' : '';
+      inner = `<div class="opts">${c.options.map((o, i) => {
+        const sel = cur.sel.includes(i);
+        let cls = sel ? 'sel' : '', verdict = '', ex = '';
+        if (cur.checked) {
+          if (o.correct && sel) { cls = 'right'; verdict = T.correctLbl }
+          else if (o.correct && !sel) { cls = 'missed'; verdict = T.correctLbl }
+          else if (!o.correct && sel) { cls = 'wrong'; verdict = T.wrongLbl }
+          else cls = '';
+          if (!cur.result.ok) {
+            if (!o.correct && sel) ex = explBlock('bad', T.whyWrong, o, T);
+            else if (o.correct) ex = explBlock('good', (sel || c.type === 'single') ? T.whyRight : `${T.whyRight} – ${T.missed}`, o, T);
+          }
+        }
+        return `<button type="button" class="opt ${radio} ${cls}" data-action="pick" data-i="${i}" ${cur.checked ? 'disabled' : ''}>
+          <span class="box"></span><span class="otext">${esc(o.text)}</span>${verdict ? `<span class="verdict">${verdict}</span>` : ''}</button>${ex}`;
+      }).join('')}</div>`;
+    }
+    const ready = c.type === 'kprim' ? cur.judge.every(x => x !== null) : cur.sel.length > 0;
+    body = `<div class="qcard" lang="${lang}">${tag}<span>${sub}</span></div>
+      <div class="qtext">${esc(c.question)}</div>${mediaBlock(c.qMedia)}${inner}
+      ${cur.checked ? resultBanner(c, T, lang) : `<button type="button" class="btn primary wide" data-action="check" ${ready ? '' : 'disabled'}>${T.check}</button>`}</div>`;
+  }
+  const showRate = c.type === 'basic' ? cur.ever : cur.checked;
+  const sug = cur.checked ? (cur.result.ok ? 'known' : 'again') : '';
+  mainEl.innerHTML = `<div style="--c:${color}">
+    <div class="learn-top"><div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+      <span class="count">${s.done} / ${s.total}</span></div>
+    ${body}
+    <div class="rate ${showRate ? '' : 'hide'}" lang="${lang}">
+      <button type="button" class="btn again ${sug === 'again' ? 'suggest' : ''}" data-action="rate" data-k="0">${T.again}</button>
+      <button type="button" class="btn known ${sug === 'known' ? 'suggest' : ''}" data-action="rate" data-k="1">${T.known}</button></div></div>`;
+}
+function explBlock(kind, head, o, T){
+  return `<div class="expl ${kind}"><div class="expl-h">${esc(head)}</div>
+    <div class="expl-t">${o.explanation ? esc(o.explanation) : `<em class="muted">${T.noExpl}</em>`}</div>${mediaBlock(o.media)}</div>`;
+}
+function resultBanner(c, T, lang){
+  const r = state.session.cur.result;
+  if (c.type === 'kprim') {
+    const pts = r.score, cls = pts === 1 ? 'good' : pts === 0.5 ? 'mid' : 'bad';
+    const head = pts === 1 ? T.allRight : pts === 0.5 ? T.partly : T.notRight;
+    return `<div class="banner ${cls}" role="status"><div>${head}<small>${r.n} ${T.of} 4 ${T.correctJudged} · ${num(pts, lang)} ${pts === 1 ? T.point : T.points}</small></div></div>`;
+  }
+  return r.ok ? `<div class="banner good" role="status">${T.allRight}</div>` : `<div class="banner bad" role="status">${T.notRight}</div>`;
+}
+function checkAnswer(){
+  const s = state.session, cur = s.cur, c = cardById(cur.id);
+  if (c.type === 'kprim') {
+    const n = c.options.filter((o, i) => cur.judge[i] === o.correct).length;
+    cur.result = {n, score: n === 4 ? 1 : n === 3 ? 0.5 : 0, ok: n === 4};
+  } else {
+    const ok = c.options.every((o, i) => o.correct === cur.sel.includes(i));
+    cur.result = {ok, score: ok ? 1 : 0};
+  }
+  if (!s.seen.has(c.id)) { s.seen.add(c.id); s.maxPts += 1; s.pts += cur.result.score }
+  cur.checked = true; render();
+}
+async function rate(known){
+  const s = state.session, id = s.queue.shift(), c = cardById(id);
+  c.stats = c.stats || {known:0, again:0};
+  if (known) { s.known++; s.done++; c.stats.known++ }
+  else { s.again++; c.stats.again++; s.queue.splice(Math.min(3, s.queue.length), 0, id) }
+  put('cards', c).catch(() => {});
+  nextCard();
+}
+function viewDone(){
+  const s = state.session, sb = subj(s.sid);
+  barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="open-subject" data-id="${esc(s.sid)}">${I.back}Fach</button><div class="bar-title"></div></div>`;
+  const pts = Math.round(s.pts * 10) / 10;
+  mainEl.innerHTML = `<div class="done" style="--c:${safeColor(sb && sb.color)}"><div class="deck-art"><i></i><i></i><i></i></div>
+    <h1>Runde geschafft</h1><p class="muted">Du hast alle ${s.total} ${s.total === 1 ? 'Karte' : 'Karten'} in «${esc(sb ? sb.name : '')}» durchgearbeitet.</p>
+    <div class="stats"><div class="stat"><b>${s.total}</b><span>Karten gewusst</span></div>
+      <div class="stat"><b>${s.again}</b><span>× nochmal geübt</span></div>
+      ${s.maxPts ? `<div class="stat"><b>${num(pts, 'de')} / ${s.maxPts}</b><span>Punkte bei Choice-Fragen (erster Versuch)</span></div>` : ''}</div>
+    <div class="done-actions"><button class="btn primary" data-action="learn">Nochmal lernen</button>
+      <button class="btn" data-action="open-subject" data-id="${esc(s.sid)}">Zurück zum Fach</button></div></div>`;
+}
+
+/* ---------- Löschen ---------- */
+async function deleteCard(id){
+  const c = cardById(id); if (!c) return;
+  const ok = await ask({title:'Karte löschen?', text:`«${(c.question || 'Karte').slice(0, 80)}» und alle Anhänge dieser Karte werden endgültig gelöscht.`, ok:'Löschen', danger:true});
+  if (!ok) return;
+  const ids = [...(c.qMedia||[]), ...(c.aMedia||[]), ...(c.options||[]).flatMap(o => o.media || [])].map(m => m.id);
+  try {
+    await del('cards', id);
+    for (const m of ids) { await del('media', m); const r = mediaCache.get(m); if (r) { URL.revokeObjectURL(r.url); mediaCache.delete(m) } }
+    state.cards = state.cards.filter(x => x.id !== id);
+    toast('Karte gelöscht'); render();
+  } catch { toast('Löschen hat nicht geklappt') }
+}
+
+/* ---------- Fach anlegen ---------- */
+let newColor = COLORS[0];
+function newSubjectSheet(){
+  newColor = COLORS[state.subjects.length % COLORS.length];
+  openSheet(`<form data-form="subject" class="form" style="gap:16px">
+    <h2>Neues Fach</h2>
+    <div class="field"><label class="lbl" for="s-name">Name</label><input type="text" id="s-name" maxlength="80" placeholder="z. B. Biologische Psychologie" autofocus autocomplete="off"></div>
+    <div class="field"><span class="lbl">Farbe</span><div class="swatches">${COLORS.map(c => `<button type="button" class="swatch ${c === newColor ? 'on' : ''}" style="--c:${c}" data-action="pick-color" data-c="${c}" aria-label="Farbe ${c}"></button>`).join('')}</div></div>
+    <div class="sheet-actions"><button type="button" class="btn" data-action="sheet-no">Abbrechen</button><button type="submit" class="btn primary">Fach anlegen</button></div></form>`);
+}
+async function createSubject(){
+  const inp = $('#s-name'), name = inp ? inp.value.trim() : '';
+  if (!name) { inp && inp.focus(); toast('Bitte gib dem Fach einen Namen'); return }
+  const s = {id:uid(), name, color:newColor, created:Date.now()};
+  await put('subjects', s); state.subjects.push(s); closeSheet();
+  go({name:'subject', id:s.id});
+}
+
+/* ---------- Anhänge ansehen ---------- */
+function canShareFile(file){ try { return !!(navigator.canShare && navigator.canShare({files:[file]})) } catch { return false } }
+async function viewFile(id){
+  const r = await mediaURL(id); if (!r) return;
+  const file = new File([r.data], r.name, {type:r.type});
+  const share = isIOS && canShareFile(file);
+  const pdf = r.type === 'application/pdf';
+  layer.innerHTML = `<div class="viewer"><div class="viewer-bar"><button class="icon-btn" data-action="close-layer" aria-label="Schliessen">${I.close}</button>
+    <div class="t"></div>
+    ${share ? `<button class="btn primary" data-action="share-file" data-id="${esc(id)}">${I.share}Öffnen in …</button>` : `<a class="btn primary" href="${r.url}" download="">${I.box}Sichern</a>`}</div>
+    <div class="viewer-body">${pdf ? `<iframe title="PDF"></iframe>` : `<p class="muted" style="text-align:center;max-width:36ch">Für diese Datei gibt es keine Vorschau. ${share ? 'Mit «Öffnen in …» öffnest du sie in einer passenden App.' : 'Mit «Sichern» lädst du sie herunter.'}</p>`}</div></div>`;
+  layer.querySelector('.t').textContent = r.name;
+  const a = layer.querySelector('a[download]'); if (a) a.setAttribute('download', r.name);
+  const fr = layer.querySelector('iframe'); if (fr) fr.src = r.url;
+}
+async function shareFile(id){
+  const r = mediaCache.get(id); if (!r) return;
+  try { await navigator.share({files:[new File([r.data], r.name, {type:r.type})]}) } catch {}
+}
+
+/* ---------- Backup ---------- */
+let backupFile = null;
+function backupSheet(){
+  backupFile = null;
+  openSheet(`<h2>Backup</h2>
+    <p>Sichere alle Fächer, Karten und Anhänge in einer Datei. Mit dieser Datei überträgst du deine Karten auf dein MacBook, iPad oder iPhone: dort hier auf «Backup importieren» tippen.</p>
+    <div style="display:grid;gap:10px"><button class="btn primary" data-action="make-backup">Backup erstellen</button><div id="bk-out"></div>
+      <label class="btn">Backup importieren<input type="file" class="vh" data-import></label></div>
+    <div class="store-info" id="bk-info"></div>
+    <div class="sheet-actions"><button class="btn ghost" data-action="sheet-no">Schliessen</button></div>`);
+  storageInfo();
+}
+async function storageInfo(){
+  const el = $('#bk-info'); if (!el) return;
+  const lines = [];
+  try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); lines.push(`Belegter Speicher: ${(e.usage / 1048576).toFixed(1).replace('.', ',')} MB`) } } catch {}
+  try { if (navigator.storage && navigator.storage.persisted) lines.push((await navigator.storage.persisted()) ? 'Dauerhafter Speicher: aktiv' : 'Dauerhafter Speicher: vom Browser nicht bestätigt. Erstelle regelmässig ein Backup.') } catch {}
+  el.innerHTML = lines.map(l => `<span>${esc(l)}</span>`).join('');
+}
+const MAGIC = 'KKBACKUP1';
+async function makeBackup(){
+  const out = $('#bk-out'); if (!out) return;
+  out.innerHTML = '<p class="muted small">Backup wird erstellt …</p>';
+  try {
+    const [subjects, cards, media] = await Promise.all([all('subjects'), all('cards'), all('media')]);
+    let offset = 0; const index = [], parts = [];
+    for (const m of media) { const len = m.data.byteLength; index.push({id:m.id, name:m.name, type:m.type, size:m.size, offset, length:len}); parts.push(m.data); offset += len }
+    const json = new TextEncoder().encode(JSON.stringify({app:'karteikarten', version:1, exported:new Date().toISOString(), subjects, cards, media:index}));
+    const head = new TextEncoder().encode(MAGIC), lenBuf = new ArrayBuffer(4); new DataView(lenBuf).setUint32(0, json.byteLength, true);
+    const blob = new Blob([head, lenBuf, json, ...parts], {type:'application/octet-stream'});
+    const d = new Date(), stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    backupFile = new File([blob], `Karteikarten-Backup-${stamp}.kartei`, {type:'application/octet-stream'});
+    const mb = (blob.size / 1048576).toFixed(1).replace('.', ',');
+    const info = `${subjects.length} ${subjects.length === 1 ? 'Fach' : 'Fächer'} · ${cards.length} ${cards.length === 1 ? 'Karte' : 'Karten'} · ${media.length} ${media.length === 1 ? 'Anhang' : 'Anhänge'} · ${mb} MB`;
+    if (isIOS && canShareFile(backupFile)) {
+      out.innerHTML = `<p class="small muted" style="margin-bottom:8px">${info}</p><button class="btn wide" data-action="share-backup">${I.share}Teilen oder in «Dateien» sichern</button>`;
+    } else {
+      const url = URL.createObjectURL(blob);
+      out.innerHTML = `<p class="small muted" style="margin-bottom:8px">${info}</p><a class="btn wide" href="${url}">${I.box}Datei herunterladen</a>`;
+      out.querySelector('a').setAttribute('download', backupFile.name);
+    }
+  } catch { out.innerHTML = '<p class="err">Das Backup konnte nicht erstellt werden.</p>' }
+}
+async function shareBackup(){
+  if (!backupFile) return;
+  try { await navigator.share({files:[backupFile], title:'Karteikarten-Backup'}) } catch (e) { if (e && e.name !== 'AbortError') toast('Teilen hat nicht geklappt') }
+}
+async function importBackup(file){
+  try {
+    const buf = await file.arrayBuffer(), head = new TextDecoder().decode(buf.slice(0, MAGIC.length));
+    if (head !== MAGIC) throw new Error('format');
+    const len = new DataView(buf, MAGIC.length, 4).getUint32(0, true), start = MAGIC.length + 4;
+    const meta = JSON.parse(new TextDecoder().decode(buf.slice(start, start + len))), base = start + len;
+    if (meta.app !== 'karteikarten' || !Array.isArray(meta.subjects) || !Array.isArray(meta.cards)) throw new Error('format');
+    const ok = await ask({title:'Backup importieren?', text:`${meta.subjects.length} ${meta.subjects.length === 1 ? 'Fach' : 'Fächer'} und ${meta.cards.length} ${meta.cards.length === 1 ? 'Karte' : 'Karten'} werden übernommen. Deine bestehenden Karten bleiben erhalten; Karten, die schon vorhanden sind, werden nicht doppelt angelegt.`, ok:'Importieren'});
+    if (!ok) return;
+    for (const m of (meta.media || [])) await put('media', {id:String(m.id), name:String(m.name || 'Datei'), type:String(m.type || 'application/octet-stream'), size:m.length, data:buf.slice(base + m.offset, base + m.offset + m.length)});
+    await putMany('subjects', meta.subjects.filter(s => s && s.id).map(s => ({id:String(s.id), name:String(s.name || 'Fach'), color:safeColor(s.color), created:+s.created || Date.now()})));
+    await putMany('cards', meta.cards.filter(c => c && c.id && TYPES.includes(c.type)));
+    await load(); toast(`Import fertig: ${meta.cards.length} Karten`); go({name:'home'});
+  } catch (e) {
+    closeSheet();
+    toast(e && e.name === 'QuotaExceededError' ? 'Nicht genug Speicher für dieses Backup' : 'Diese Datei ist kein gültiges Karteikarten-Backup');
+  }
+}
+
+/* ---------- Ereignisse ---------- */
+const actions = {
+  'home': () => go({name:'home'}),
+  'open-subject': el => go({name:'subject', id:el.dataset.id}),
+  'new-subject': () => newSubjectSheet(),
+  'pick-color': el => { newColor = el.dataset.c; layer.querySelectorAll('.swatch').forEach(s => s.classList.toggle('on', s.dataset.c === newColor)) },
+  'close-hint': () => { ls.set('hint-closed', '1'); render() },
+  'backup': () => backupSheet(),
+  'make-backup': () => makeBackup(),
+  'share-backup': () => shareBackup(),
+  'new-card': () => { const id = state.view.id; state.draft = newDraft(id, ls.get('last-type') || 'basic'); go({name:'edit'}) },
+  'cancel-edit': async () => {
+    const d = state.draft, dirty = d.question.trim() || d.answer.trim() || d.qMedia.length || d.options.some(o => o.text.trim() || o.explanation.trim());
+    if (dirty && !(await ask({title:'Karte verwerfen?', text:'Was du eingegeben hast, geht verloren.', ok:'Verwerfen', danger:true}))) return;
+    const sid = d.subjectId; state.draft = null; go({name:'subject', id:sid});
+  },
+  'set-type': el => { setType(el.dataset.t); ls.set('last-type', el.dataset.t) },
+  'set-lang': el => { state.draft.lang = el.dataset.l; render() },
+  'toggle-correct': el => {
+    const d = state.draft, i = +el.dataset.i;
+    if (d.type === 'single') d.options.forEach((o, k) => o.correct = k === i ? !o.correct : false);
+    else d.options[i].correct = !d.options[i].correct;
+    state.err = ''; render();
+  },
+  'set-truth': el => { state.draft.options[+el.dataset.i].correct = el.dataset.v === '1'; state.err = ''; render() },
+  'add-opt': () => { state.draft.options.push(blankOpt()); render() },
+  'rm-opt': el => { state.draft.options.splice(+el.dataset.i, 1); render() },
+  'rm-media': el => { draftMedia(el.dataset.key).splice(+el.dataset.i, 1); render() },
+  'save-card': (el, e) => { e.preventDefault(); saveDraft(!!el.dataset.again) },
+  'del-card': el => deleteCard(el.dataset.id),
+  'learn': () => startLearn(state.view.id || (state.session && state.session.sid)),
+  'end-learn': () => go({name:'subject', id:state.session.sid}),
+  'flip': el => {
+    const cur = state.session.cur; cur.flipped = !cur.flipped; cur.ever = true;
+    el.classList.toggle('is-flipped', cur.flipped);
+    const r = mainEl.querySelector('.rate'); if (r) r.classList.remove('hide');
+  },
+  'pick': el => {
+    const cur = state.session.cur, c = cardById(cur.id), i = +el.dataset.i;
+    if (cur.checked) return;
+    if (c.type === 'single') cur.sel = [i];
+    else cur.sel = cur.sel.includes(i) ? cur.sel.filter(x => x !== i) : [...cur.sel, i];
+    mainEl.querySelectorAll('.opt').forEach(b => b.classList.toggle('sel', cur.sel.includes(+b.dataset.i)));
+    const chk = mainEl.querySelector('[data-action="check"]'); if (chk) chk.disabled = !cur.sel.length;
+  },
+  'judge': el => {
+    const cur = state.session.cur, i = +el.dataset.i; if (cur.checked) return;
+    cur.judge[i] = el.dataset.v === '1';
+    el.parentNode.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', (p.dataset.v === '1') === cur.judge[i]));
+    const chk = mainEl.querySelector('[data-action="check"]'); if (chk) chk.disabled = !cur.judge.every(x => x !== null);
+  },
+  'check': () => checkAnswer(),
+  'rate': el => rate(el.dataset.k === '1'),
+  'view-img': el => { layer.innerHTML = `<div class="lightbox" data-action="close-layer"><img alt=""><button class="icon-btn" aria-label="Schliessen">${I.close}</button></div>`; const im = layer.querySelector('img'); im.src = el.src; im.alt = el.alt },
+  'view-file': el => viewFile(el.dataset.id),
+  'share-file': el => shareFile(el.dataset.id),
+  'close-layer': () => { layer.innerHTML = '' },
+  'close-sheet': (el, e) => { if (e.target === el) closeSheet(false) },
+  'sheet-no': () => closeSheet(false),
+  'sheet-yes': () => closeSheet(true),
+  'noop': () => {}
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]'); if (!el) return;
+  const fn = actions[el.dataset.action]; if (fn) fn(el, e);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && layer.innerHTML) { closeSheet(false); return }
+  const t = e.target;
+  if ((e.key === 'Enter' || e.key === ' ') && t.dataset && t.dataset.action === 'flip') { e.preventDefault(); actions.flip(t) }
+});
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  if (e.target.dataset.form === 'subject') createSubject();
+});
+function onBind(e){
+  const b = e.target.dataset && e.target.dataset.bind; if (!b || !state.draft) return;
+  const d = state.draft, v = e.target.value;
+  if (b.startsWith('opt.')) { const [, i, k] = b.split('.'); d.options[+i][k] = v }
+  else d[b] = v;
+  if (b === 'subjectId') render();
+}
+document.addEventListener('input', onBind);
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset && t.dataset.bind === 'subjectId') { if (state.draft && state.draft.subjectId !== t.value) onBind(e); return }
+  if (t.dataset && t.dataset.media && state.draft) { draftMedia(t.dataset.media).push(...t.files); render(); return }
+  if (t.dataset && 'import' in t.dataset && t.files[0]) importBackup(t.files[0]);
+});
+
+/* ---------- Start ---------- */
+async function load(){
+  const [s, c] = await Promise.all([all('subjects'), all('cards')]);
+  state.subjects = s.sort((a, b) => a.created - b.created);
+  state.cards = c;
+}
+(async () => {
+  try { await load() } catch { mainEl.innerHTML = '<div class="empty"><h1>Speicher nicht verfügbar</h1><p>Dieser Browser erlaubt keine Speicherung. Öffne die App in Safari und nicht im privaten Modus.</p></div>'; return }
+  render();
+  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist() } catch {}
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+}
+</script>
+</body>
+</html>
