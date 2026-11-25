@@ -32,12 +32,14 @@ LAYOUT: eine ruhige Spalte bis 820px, Kacheln im Raster, auf dem iPhone alles un
   --r:18px; --r-sm:12px;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;
   --round:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  --c-rot:#C9302C; --c-orange:#B86200; --c-gruen:#1E8A5A; --c-blau:#2F5FD0; --c-violett:#7A4CC2;
   --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
   --sl:env(safe-area-inset-left,0px); --sr:env(safe-area-inset-right,0px);
 }
 @media (prefers-color-scheme:dark){
   :root{
     --bg:#14161B; --surface:#1E2128; --surface2:#23262E; --ink:#ECEDF0; --muted:#9A9EA8; --line:#2E323B;
+    --c-rot:#FF7A6B; --c-orange:#F5A445; --c-gruen:#4CC892; --c-blau:#8FA8FF; --c-violett:#B99CFF;
     --accent:#7D93FF; --accent-ink:#0E1220; --accent-soft:#262E4D;
     --good:#4CC892; --good-soft:#163328; --bad:#FF7A63; --bad-soft:#3A1F1B; --warn-soft:#3A3020;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3);
@@ -201,7 +203,7 @@ input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var
   padding:28px 24px 24px;display:flex;flex-direction:column;gap:16px;position:relative;overflow:hidden}
 .face::before{content:"";position:absolute;left:0;right:0;top:0;height:8px;background:var(--c,var(--accent))}
 .face.back{transform:rotateY(180deg)}
-.face.back{background:linear-gradient(var(--surface),var(--surface2))}
+.face.back{background:linear-gradient(var(--surface),var(--surface2));color:var(--ink);font-weight:400;font-size:16px;border-radius:24px;min-height:0;align-items:stretch;padding:28px 24px 24px}
 .face-tag{font-size:13px;font-weight:650;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .qtext{font-family:var(--round);font-size:clamp(21px,3.4vw,27px);font-weight:650;line-height:1.3;white-space:pre-wrap;overflow-wrap:anywhere}
 .atext{font-size:clamp(18px,2.8vw,21px);line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -327,6 +329,19 @@ input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var
 .tile-bar{position:relative;display:block;height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:8px}
 .tile-bar i{display:block;height:100%;background:var(--good);border-radius:99px}
 
+/* Textformatierung */
+.c-rot{color:var(--c-rot)}.c-orange{color:var(--c-orange)}.c-gruen{color:var(--c-gruen)}.c-blau{color:var(--c-blau)}.c-violett{color:var(--c-violett)}
+.fmt-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px;background:var(--surface2);border:1px solid var(--line);border-radius:12px}
+.fmt-bar button{min-width:40px;height:40px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:16px;font-weight:700}
+.fmt-bar .dotc{min-width:0;width:34px;height:34px;padding:0;border-radius:50%;background:var(--cc);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line)}
+.fmt-bar .sep{width:1px;height:26px;background:var(--line);margin:0 2px}
+.fmt-prev{font-size:15px;line-height:1.5;background:var(--surface2);border:1px dashed var(--line);border-radius:10px;padding:8px 12px;overflow-wrap:anywhere}
+.fmt-prev-l{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:2px}
+.fmt-prev p{margin:0 0 6px}.fmt-prev ul{margin:0;padding-left:20px}
+.chars{display:flex;flex-wrap:wrap;gap:6px}
+.chars button{min-width:44px;height:44px;padding:0 6px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);font-size:20px}
+.chars button.hit{background:var(--accent-soft);border-color:var(--accent)}
+
 /* Sync */
 .sync-btn{color:var(--muted);padding:0 10px;font-size:14px;font-weight:600;gap:6px}
 .sync-btn[data-s=ok]{color:var(--good)}
@@ -422,7 +437,7 @@ table.subj tr:last-child td{border-bottom:0}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media (max-width:520px){
   main{padding-top:14px}
-  .face,.qcard{padding:24px 18px 18px;border-radius:20px}
+  .face,.face.back,.qcard{padding:24px 18px 18px;border-radius:20px}
   .opt-head{flex-wrap:wrap}
   .opt-head textarea{flex:1 1 100%;order:-1}
   .mark{flex:1}
@@ -474,6 +489,23 @@ const L = {
     basic:'Flashcard', single:'Single choice', multi:'Multiple choice', kprim:'K-prim', dec:'.',
     reveal:'Reveal answer', next:'Continue', finish:'Finish lesson', lessonDone:'Lesson completed',  selfQ:'Did you know it?', selfYes:'Knew it', selfNo:'Did not know', selfTag:'Self-assessment', unanswered:'Not answered'}
 };
+/* Textformatierung: **fett** und [farbe]Text[/farbe] */
+const FMT_COLORS = [['rot','Rot'],['orange','Orange'],['gruen','Grün'],['blau','Blau'],['violett','Violett']];
+const fmtInline = h => {
+  h = h.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
+  for (let i = 0; i < 3; i++) h = h.replace(/\[(rot|orange|gruen|blau|violett)\]([\s\S]*?)\[\/\1\]/g, '<span class="c-$1">$2</span>');
+  return h;
+};
+const fmt = t => fmtInline(esc(t));
+const plain = t => String(t ?? '').replace(/\*\*([\s\S]+?)\*\*/g, '$1').replace(/\[\/?(rot|orange|gruen|blau|violett)\]/g, '');
+const hasFmt = t => /\*\*[\s\S]+?\*\*|\[(rot|orange|gruen|blau|violett)\]/.test(t || '');
+const CHARS = [
+  ['Griechisch', 'α β γ δ ε ζ η θ ι κ λ μ ν ξ π ρ σ τ υ φ χ ψ ω Γ Δ Θ Λ Π Σ Φ Ψ Ω'],
+  ['Mathe und Statistik', '± × ÷ · = ≠ ≈ ≡ < > ≤ ≥ ∞ √ ∛ ∑ ∏ ∫ ∂ ∆ ∝ % ‰ ° ′ ″ ¹ ² ³ ⁴ ⁿ ⁻ ₀ ₁ ₂ ₃ ₙ ½ ⅓ ¼ ¾ x̄ ȳ p̂ μ̂ σ̂ r² η² χ² ∈ ∉ ∅ ∩ ∪ ⊂ ⊆ ∀ ∃ ¬ ∧ ∨'],
+  ['Pfeile', '→ ← ↑ ↓ ↔ ⇒ ⇐ ⇔ ↗ ↘ ⟶ ↻'],
+  ['Zeichen', '« » ‹ › „ “ ” ‚ ‘ ’ – — … • ◦ ✓ ✗ ★ § ¶ † © ® ™ & @ # № ♀ ♂'],
+  ['Buchstaben', 'ä ö ü Ä Ö Ü é è ê à â ç ë ï î ô û ñ ø å æ œ']
+];
 const num = (n, lang) => String(n).replace('.', L[lang].dec);
 
 /* Symbole */
@@ -547,6 +579,7 @@ function mediaBlock(list){
 function hydrate(root){
   root.querySelectorAll('img[data-thumb]:not([src])').forEach(async im => { const r = await mediaURL(im.dataset.thumb); if (r) im.src = r.url });
   root.querySelectorAll('textarea.grow-ta').forEach(autoGrow);
+  root.querySelectorAll('textarea.fmt').forEach(updatePreview);
   root.querySelectorAll('[data-mid]:not([data-ready])').forEach(async el => {
     el.dataset.ready = '1';
     const r = await mediaURL(el.dataset.mid);
@@ -566,6 +599,48 @@ function hydrate(root){
     }
   });
 }
+
+/* ---------- Werkzeugleiste für Textformatierung ---------- */
+let fmtTarget = null;
+const fmtAnchor = ta => ta.parentElement && ta.parentElement.matches('.opt-head, .kp-ed-top') ? ta.parentElement : ta;
+function showFmtBar(ta){
+  fmtTarget = ta;
+  let bar = document.getElementById('fmt-bar');
+  if (!bar) {
+    bar = document.createElement('div'); bar.id = 'fmt-bar'; bar.className = 'fmt-bar'; bar.setAttribute('role', 'toolbar'); bar.setAttribute('aria-label', 'Formatierung');
+    bar.innerHTML = `<button type="button" data-action="fmt-bold" aria-label="Fett">F</button><span class="sep"></span>`
+      + FMT_COLORS.map(([c, n]) => `<button type="button" class="dotc" style="--cc:var(--c-${c})" data-action="fmt-color" data-c="${c}" aria-label="Farbe ${n}"></button>`).join('')
+      + `<span class="sep"></span><button type="button" data-action="fmt-chars" aria-label="Sonderzeichen">Ω</button>`;
+  }
+  const a = fmtAnchor(ta);
+  if (bar.nextElementSibling !== a) a.before(bar);
+}
+function updatePreview(ta){
+  const a = fmtAnchor(ta);
+  let pv = a.nextElementSibling && a.nextElementSibling.classList.contains('fmt-prev') ? a.nextElementSibling : null;
+  if (!hasFmt(ta.value)) { if (pv) pv.remove(); return }
+  if (!pv) { pv = document.createElement('div'); pv.className = 'fmt-prev'; a.after(pv) }
+  const lessonText = /^b\.\d+\.text$/.test(ta.dataset.lbind || '');
+  pv.innerHTML = '<span class="fmt-prev-l">Vorschau</span>' + (lessonText ? md(ta.value) : fmt(ta.value).replace(/\n/g, '<br>'));
+}
+function fmtWrap(a, b){
+  const ta = fmtTarget; if (!ta || !document.body.contains(ta)) return;
+  const s0 = ta.selectionStart, e0 = ta.selectionEnd, v = ta.value, sel = v.slice(s0, e0);
+  if (sel.length >= a.length + b.length && sel.startsWith(a) && sel.endsWith(b)) ta.setRangeText(sel.slice(a.length, sel.length - b.length), s0, e0, 'select');
+  else if (s0 !== e0 && v.slice(s0 - a.length, s0) === a && v.slice(e0, e0 + b.length) === b) ta.setRangeText(sel, s0 - a.length, e0 + b.length, 'select');
+  else if (s0 === e0) { ta.setRangeText(a + b, s0, e0, 'end'); ta.selectionStart = ta.selectionEnd = s0 + a.length }
+  else ta.setRangeText(a + sel + b, s0, e0, 'select');
+  ta.dispatchEvent(new Event('input', {bubbles:true}));
+  ta.focus();
+}
+function charsSheet(){
+  if (!fmtTarget) return;
+  openSheet(`<h2>Sonderzeichen</h2><p class="small">Tippe auf ein Zeichen, um es an der Cursor-Stelle einzufügen. Du kannst mehrere nacheinander wählen.</p>
+    ${CHARS.map(([n, list]) => `<div class="setup-group"><span class="lbl">${n}</span><div class="chars">${list.split(' ').map(ch => `<button type="button" data-action="ins-char" data-c="${esc(ch)}" aria-label="${esc(ch)} einfügen">${esc(ch)}</button>`).join('')}</div></div>`).join('')}
+    <div class="sheet-actions"><button class="btn primary" data-action="chars-done">Fertig</button></div>`);
+}
+document.addEventListener('focusin', e => { if (e.target.matches && e.target.matches('textarea.fmt')) showFmtBar(e.target) });
+document.addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('.fmt-bar button')) e.preventDefault() });
 
 /* ---------- Kleine Hilfen ---------- */
 function autoGrow(t){ t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px' }
@@ -674,7 +749,7 @@ function cardRow(c){
   return `<li class="crow"><div class="crow-main">
     <div class="crow-tags"><span class="tag t-${esc(c.type)}">${esc(TYPE_NAMES[c.type] || '')}</span><span class="tag">${c.lang === 'en' ? 'EN' : 'DE'}</span>
     ${m ? `<span class="tag">${I.clip}${m}</span>` : ''}</div>
-    <div class="crow-q">${esc(c.question) || '<span class="muted">(nur Anhang)</span>'}</div>
+    <div class="crow-q">${fmt(c.question) || '<span class="muted">(nur Anhang)</span>'}</div>
     ${c.type === 'basic' ? `<button class="link-btn" data-action="convert" data-id="${esc(c.id)}">${I.flip}In Choice-Frage umwandeln</button>` : ''}</div>
     <button class="icon-btn danger" data-action="del-card" data-id="${esc(c.id)}" aria-label="Karte löschen">${I.trash}</button></li>`;
 }
@@ -711,26 +786,26 @@ function viewEdit(){
       <div class="seg two"><button type="button" class="${d.lang === 'de' ? 'on' : ''}" data-action="set-lang" data-l="de">Deutsch</button>
       <button type="button" class="${d.lang === 'en' ? 'on' : ''}" data-action="set-lang" data-l="en">English</button></div></div>
     <div class="field"><label class="lbl" for="f-q">${d.type === 'kprim' ? 'Frage bzw. Einleitung' : 'Frage'}</label>
-      <textarea id="f-q" rows="3" data-bind="question" placeholder="${d.lang === 'en' ? 'e.g. What does the hippocampus do?' : 'z. B. Welche Funktion hat der Hippocampus?'}">${esc(d.question)}</textarea>
+      <textarea class="fmt" id="f-q" rows="3" data-bind="question" placeholder="${d.lang === 'en' ? 'e.g. What does the hippocampus do?' : 'z. B. Welche Funktion hat der Hippocampus?'}">${esc(d.question)}</textarea>
       ${mediaEditor('q', 'Anhang zur Frage')}</div>
     ${d.type === 'basic' ? `<div class="field"><label class="lbl" for="f-a">Antwort (Rückseite)</label>
-      <textarea id="f-a" rows="4" data-bind="answer">${esc(d.answer)}</textarea>${mediaEditor('a', 'Anhang zur Antwort')}</div>` : ''}
+      <textarea class="fmt" id="f-a" rows="4" data-bind="answer">${esc(d.answer)}</textarea>${mediaEditor('a', 'Anhang zur Antwort')}</div>` : ''}
     ${opts ? `<div class="field"><span class="lbl">Antwortoptionen</span>
       <p class="sub">${d.type === 'single' ? 'Markiere genau eine Antwort als richtig.' : 'Markiere alle richtigen Antworten (mindestens eine).'} Schreibe zu jeder Option, warum sie richtig oder falsch ist.</p>
       ${d.options.map((o, i) => `<div class="opt-ed"><div class="opt-head">
           <button type="button" class="mark ${d.type === 'single' ? 'radio' : ''} ${o.correct ? 'on' : ''}" data-action="toggle-correct" data-i="${i}" aria-pressed="${!!o.correct}"><span class="ck"></span>richtig</button>
-          <textarea rows="1" class="grow-ta" data-bind="opt.${i}.text" placeholder="Antwort ${String.fromCharCode(65 + i)}" aria-label="Antwort ${String.fromCharCode(65 + i)}">${esc(o.text)}</textarea>
+          <textarea rows="1" class="fmt grow-ta" data-bind="opt.${i}.text" placeholder="Antwort ${String.fromCharCode(65 + i)}" aria-label="Antwort ${String.fromCharCode(65 + i)}">${esc(o.text)}</textarea>
           ${d.options.length > 2 ? `<button type="button" class="icon-btn" data-action="rm-opt" data-i="${i}" aria-label="Option entfernen">${I.close}</button>` : ''}</div>
-        <textarea rows="2" data-bind="opt.${i}.explanation" placeholder="Erklärung: Warum ist diese Antwort richtig bzw. falsch?" aria-label="Erklärung zu Antwort ${String.fromCharCode(65 + i)}">${esc(o.explanation)}</textarea>
+        <textarea class="fmt" rows="2" data-bind="opt.${i}.explanation" placeholder="Erklärung: Warum ist diese Antwort richtig bzw. falsch?" aria-label="Erklärung zu Antwort ${String.fromCharCode(65 + i)}">${esc(o.explanation)}</textarea>
         ${mediaEditor('o' + i, 'Anhang zur Erklärung')}</div>`).join('')}
       ${d.options.length < 8 ? `<button type="button" class="btn" data-action="add-opt">${I.plus}Option hinzufügen</button>` : ''}</div>` : ''}
     ${d.type === 'kprim' ? `<div class="field"><span class="lbl">Vier Aussagen</span>
       <p class="sub">Lege bei jeder Aussage fest, ob sie richtig oder falsch ist, und erkläre warum.</p>
       ${d.options.map((o, i) => `<div class="opt-ed"><div class="kp-ed-top"><span class="num">${i + 1}</span>
-          <textarea rows="1" class="grow-ta" data-bind="opt.${i}.text" placeholder="Aussage ${i + 1}" aria-label="Aussage ${i + 1}">${esc(o.text)}</textarea>
+          <textarea rows="1" class="fmt grow-ta" data-bind="opt.${i}.text" placeholder="Aussage ${i + 1}" aria-label="Aussage ${i + 1}">${esc(o.text)}</textarea>
           <div class="truth"><button type="button" class="t ${o.correct === true ? 'on' : ''}" data-action="set-truth" data-i="${i}" data-v="1">richtig</button>
           <button type="button" class="f ${o.correct === false ? 'on' : ''}" data-action="set-truth" data-i="${i}" data-v="0">falsch</button></div></div>
-        <textarea rows="2" data-bind="opt.${i}.explanation" placeholder="Erklärung: Warum ist diese Aussage richtig bzw. falsch?" aria-label="Erklärung zu Aussage ${i + 1}">${esc(o.explanation)}</textarea>
+        <textarea class="fmt" rows="2" data-bind="opt.${i}.explanation" placeholder="Erklärung: Warum ist diese Aussage richtig bzw. falsch?" aria-label="Erklärung zu Aussage ${i + 1}">${esc(o.explanation)}</textarea>
         ${mediaEditor('o' + i, 'Anhang zur Erklärung')}</div>`).join('')}</div>` : ''}
     ${state.err ? `<div class="err" role="alert">${esc(state.err)}</div>` : ''}
     <div class="form-actions">${d.convertFrom ? '' : `<button type="button" class="btn" data-action="save-card" data-again="1">Speichern &amp; nächste</button>`}
@@ -829,10 +904,10 @@ function viewLearn(){
   if (c.type === 'basic') {
     body = `<div class="stage" lang="${lang}"><div class="flip ${cur.flipped ? 'is-flipped' : ''}" data-action="flip" role="button" tabindex="0" aria-label="${T.tap}">
       <div class="face front">${tag}<span>${T.question}</span></div>
-        <div class="grow"><div class="qtext">${esc(c.question)}</div>${mediaBlock(c.qMedia)}</div>
+        <div class="grow"><div class="qtext">${fmt(c.question)}</div>${mediaBlock(c.qMedia)}</div>
         <div class="tap-hint">${I.flip}${T.tap}</div></div>
       <div class="face back">${tag}<span>${T.answer}</span></div>
-        <div class="grow"><div class="atext">${esc(c.answer)}</div>${mediaBlock(c.aMedia)}</div>
+        <div class="grow"><div class="atext">${fmt(c.answer)}</div>${mediaBlock(c.aMedia)}</div>
         <div class="tap-hint">${I.flip}${T.tapBack}</div></div>
     </div></div>`;
   } else {
@@ -840,7 +915,7 @@ function viewLearn(){
     const inner = choiceInner(c, cur, cur.checked, cur.result, T);
     const ready = isAnswered(c, cur);
     body = `<div class="qcard" lang="${lang}">${tag}<span>${sub}</span></div>
-      <div class="qtext">${esc(c.question)}</div>${mediaBlock(c.qMedia)}${inner}
+      <div class="qtext">${fmt(c.question)}</div>${mediaBlock(c.qMedia)}${inner}
       ${cur.checked ? resultBanner(c, cur.result, T, lang) : `<button type="button" class="btn primary wide" data-action="check" ${ready ? '' : 'disabled'}>${T.check}</button>`}</div>`;
   }
   const showRate = c.type === 'basic' ? cur.ever : cur.checked;
@@ -855,13 +930,13 @@ function viewLearn(){
 }
 function explBlock(kind, head, o, T){
   return `<div class="expl ${kind}"><div class="expl-h">${esc(head)}</div>
-    <div class="expl-t">${o.explanation ? esc(o.explanation) : `<em class="muted">${T.noExpl}</em>`}</div>${mediaBlock(o.media)}</div>`;
+    <div class="expl-t">${o.explanation ? fmt(o.explanation) : `<em class="muted">${T.noExpl}</em>`}</div>${mediaBlock(o.media)}</div>`;
 }
 function choiceInner(c, a, checked, r, T){
   if (c.type === 'kprim') {
     return `<div class="opts">${c.options.map((o, i) => {
       const j = a.judge[i], ok = checked && j === o.correct, bad = checked && j !== o.correct;
-      return `<div class="kp-row ${ok ? 'right' : ''} ${bad ? 'wrong' : ''}"><div class="kp-main"><div class="kp-text">${esc(o.text)}</div>
+      return `<div class="kp-row ${ok ? 'right' : ''} ${bad ? 'wrong' : ''}"><div class="kp-main"><div class="kp-text">${fmt(o.text)}</div>
         <div class="pill-group"><button type="button" class="pill t ${j === true ? 'on' : ''}" data-action="judge" data-i="${i}" data-v="1" ${checked ? 'disabled' : ''}>${T.t}</button>
         <button type="button" class="pill f ${j === false ? 'on' : ''}" data-action="judge" data-i="${i}" data-v="0" ${checked ? 'disabled' : ''}>${T.f}</button></div></div>
         ${bad ? explBlock(o.correct ? 'good' : 'bad', o.correct ? T.stmtTrue : T.stmtFalse, o, T) : ''}</div>`;
@@ -882,7 +957,7 @@ function choiceInner(c, a, checked, r, T){
       }
     }
     return `<button type="button" class="opt ${radio} ${cls}" data-action="pick" data-i="${i}" ${checked ? 'disabled' : ''}>
-      <span class="box"></span><span class="otext">${esc(o.text)}</span>${verdict ? `<span class="verdict">${verdict}</span>` : ''}</button>${ex}`;
+      <span class="box"></span><span class="otext">${fmt(o.text)}</span>${verdict ? `<span class="verdict">${verdict}</span>` : ''}</button>${ex}`;
   }).join('')}</div>`;
 }
 function scoreOf(c, a){
@@ -976,7 +1051,7 @@ function examDots(){
 function questionHead(c, T, extra){
   const sub = c.type === 'basic' ? T.selfTag : c.type === 'single' ? T.chooseOne : c.type === 'multi' ? T.chooseMany : T.judgeAll;
   return `<div class="face-tag"><span class="tag t-${c.type}">${T[c.type]}</span><span>${sub}</span>${extra || ''}</div>
-    <div class="qtext">${esc(c.question)}</div>${mediaBlock(c.qMedia)}`;
+    <div class="qtext">${fmt(c.question)}</div>${mediaBlock(c.qMedia)}`;
 }
 function basicExamBody(c, a, T, review){
   if (!a.flipped && !review) return `<button type="button" class="btn wide" data-action="exam-reveal">${T.reveal}</button>`;
@@ -985,7 +1060,7 @@ function basicExamBody(c, a, T, review){
     : `<div class="self"><span class="lbl">${T.selfQ}</span><div class="pill-group">
         <button type="button" class="pill t ${a.self === true ? 'on' : ''}" data-action="exam-self" data-v="1">${T.selfYes}</button>
         <button type="button" class="pill f ${a.self === false ? 'on' : ''}" data-action="exam-self" data-v="0">${T.selfNo}</button></div></div>`;
-  return `<div class="answer-box"><span class="lbl">${T.answer}</span><div class="atext">${esc(c.answer)}</div>${mediaBlock(c.aMedia)}</div>${self}`;
+  return `<div class="answer-box"><span class="lbl">${T.answer}</span><div class="atext">${fmt(c.answer)}</div>${mediaBlock(c.aMedia)}</div>${self}`;
 }
 function viewExam(){
   const e = state.exam, id = e.ids[e.idx], c = cardById(id), a = e.answers[id], sb = subj(e.sid);
@@ -1453,7 +1528,7 @@ function viewStats(){
 /* ---------- Lektionen ---------- */
 const lessonsOf = sid => state.lessons.filter(l => l.subjectId === sid).sort((a, b) => a.created - b.created);
 const lessonById = id => state.lessons.find(l => l.id === id);
-const inlineMd = t => t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+const inlineMd = t => fmtInline(t);
 function md(text){
   let out = '', list = false, para = [];
   const flush = () => { if (para.length) { out += `<p>${para.join('<br>')}</p>`; para = [] } };
@@ -1566,25 +1641,25 @@ function viewLessonEdit(){
 }
 function textBlockEd(b, i){
   return `<input type="text" data-lbind="b.${i}.title" value="${esc(b.title)}" placeholder="Zwischentitel (optional)" aria-label="Zwischentitel">
-    <textarea class="grow-ta" rows="5" data-lbind="b.${i}.text" placeholder="Theorie-Text" aria-label="Text">${esc(b.text)}</textarea>
-    <p class="fmt-hint">Formatierung: **fett**, Zeilen mit «- » werden zur Aufzählung, «## » zur Unterüberschrift, Leerzeile = neuer Absatz.</p>
+    <textarea class="fmt grow-ta" rows="5" data-lbind="b.${i}.text" placeholder="Theorie-Text" aria-label="Text">${esc(b.text)}</textarea>
+    <p class="fmt-hint">Fett und Farben über die Leiste über dem Feld. Zeilen mit «- » werden zur Aufzählung, «## » zur Unterüberschrift, Leerzeile = neuer Absatz.</p>
     ${mediaEditor('t' + i, 'Bild, Video oder Datei', 'l')}`;
 }
 function qBlockEd(b, i){
   const kp = b.type === 'kprim';
   return `<div class="seg">${['single','multi','kprim'].map(t => `<button type="button" class="${b.type === t ? 'on' : ''}" data-action="lb-type" data-i="${i}" data-t="${t}">${TYPE_NAMES[t]}</button>`).join('')}</div>
-    <textarea class="grow-ta" rows="2" data-lbind="b.${i}.question" placeholder="Frage" aria-label="Frage">${esc(b.question)}</textarea>
+    <textarea class="fmt grow-ta" rows="2" data-lbind="b.${i}.question" placeholder="Frage" aria-label="Frage">${esc(b.question)}</textarea>
     ${mediaEditor('q' + i, 'Anhang zur Frage', 'l')}
     <p class="sub">${kp ? 'Lege bei jeder Aussage fest, ob sie richtig oder falsch ist.' : b.type === 'single' ? 'Markiere genau eine Antwort als richtig.' : 'Markiere alle richtigen Antworten.'}</p>
     ${b.options.map((o, k) => `<div class="opt-ed">
       ${kp ? `<div class="kp-ed-top"><span class="num">${k + 1}</span>
-          <textarea rows="1" class="grow-ta" data-lbind="b.${i}.o.${k}.text" placeholder="Aussage ${k + 1}" aria-label="Aussage ${k + 1}">${esc(o.text)}</textarea>
+          <textarea rows="1" class="fmt grow-ta" data-lbind="b.${i}.o.${k}.text" placeholder="Aussage ${k + 1}" aria-label="Aussage ${k + 1}">${esc(o.text)}</textarea>
           <div class="truth"><button type="button" class="t ${o.correct === true ? 'on' : ''}" data-action="lb-truth" data-i="${i}" data-o="${k}" data-v="1">richtig</button>
           <button type="button" class="f ${o.correct === false ? 'on' : ''}" data-action="lb-truth" data-i="${i}" data-o="${k}" data-v="0">falsch</button></div></div>`
       : `<div class="opt-head"><button type="button" class="mark ${b.type === 'single' ? 'radio' : ''} ${o.correct ? 'on' : ''}" data-action="lb-correct" data-i="${i}" data-o="${k}"><span class="ck"></span>richtig</button>
-          <textarea rows="1" class="grow-ta" data-lbind="b.${i}.o.${k}.text" placeholder="Antwort ${String.fromCharCode(65 + k)}" aria-label="Antwort ${String.fromCharCode(65 + k)}">${esc(o.text)}</textarea>
+          <textarea rows="1" class="fmt grow-ta" data-lbind="b.${i}.o.${k}.text" placeholder="Antwort ${String.fromCharCode(65 + k)}" aria-label="Antwort ${String.fromCharCode(65 + k)}">${esc(o.text)}</textarea>
           ${b.options.length > 2 ? `<button type="button" class="icon-btn" data-action="lb-rmopt" data-i="${i}" data-o="${k}" aria-label="Option entfernen">${I.close}</button>` : ''}</div>`}
-      <textarea rows="2" data-lbind="b.${i}.o.${k}.explanation" placeholder="Erklärung: Warum richtig bzw. falsch?" aria-label="Erklärung">${esc(o.explanation)}</textarea>
+      <textarea class="fmt" rows="2" data-lbind="b.${i}.o.${k}.explanation" placeholder="Erklärung: Warum richtig bzw. falsch?" aria-label="Erklärung">${esc(o.explanation)}</textarea>
       ${mediaEditor('o' + i + '_' + k, 'Anhang zur Erklärung', 'l')}</div>`).join('')}
     ${!kp && b.options.length < 8 ? `<button type="button" class="btn" data-action="lb-addopt" data-i="${i}">${I.plus}Option hinzufügen</button>` : ''}`;
 }
@@ -1642,7 +1717,7 @@ function convertCard(id){
 /* ---------- Löschen ---------- */
 async function deleteCard(id){
   const c = cardById(id); if (!c) return;
-  const ok = await ask({title:'Karte löschen?', text:`«${(c.question || 'Karte').slice(0, 80)}» und alle Anhänge dieser Karte werden endgültig gelöscht.`, ok:'Löschen', danger:true});
+  const ok = await ask({title:'Karte löschen?', text:`«${plain(c.question || 'Karte').slice(0, 80)}» und alle Anhänge dieser Karte werden endgültig gelöscht.`, ok:'Löschen', danger:true});
   if (!ok) return;
   const ids = mediaIds(c);
   try {
@@ -1891,6 +1966,16 @@ const actions = {
   'account-mode': el => accountSheet(el.dataset.m),
   'sync-now': () => { setSync('busy'); sync() },
   'sign-out': () => signOut(),
+  'fmt-bold': () => fmtWrap('**', '**'),
+  'fmt-color': el => fmtWrap(`[${el.dataset.c}]`, `[/${el.dataset.c}]`),
+  'fmt-chars': () => charsSheet(),
+  'ins-char': el => {
+    const ta = fmtTarget; if (!ta || !document.body.contains(ta)) return;
+    ta.setRangeText(el.dataset.c, ta.selectionStart, ta.selectionEnd, 'end');
+    ta.dispatchEvent(new Event('input', {bubbles:true}));
+    el.classList.add('hit'); setTimeout(() => el.classList.remove('hit'), 250);
+  },
+  'chars-done': () => { closeSheet(); if (fmtTarget && document.body.contains(fmtTarget)) fmtTarget.focus() },
   'resend-confirm': () => resendConfirm(),
   'lesson-open': el => startLesson(el.dataset.id),
   'lesson-next': () => lessonNext(),
@@ -1959,6 +2044,7 @@ document.addEventListener('submit', e => {
 });
 function onBind(e){
   if (e.target.classList && e.target.classList.contains('grow-ta')) autoGrow(e.target);
+  if (e.target.classList && e.target.classList.contains('fmt')) updatePreview(e.target);
   const lb = e.target.dataset && e.target.dataset.lbind;
   if (lb && state.ldraft) {
     const d = state.ldraft, v = e.target.value, p = lb.split('.');
