@@ -327,6 +327,17 @@ input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var
 .tile-bar{position:relative;display:block;height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:8px}
 .tile-bar i{display:block;height:100%;background:var(--good);border-radius:99px}
 
+/* Sync */
+.sync-btn{color:var(--muted);padding:0 10px;font-size:14px;font-weight:600;gap:6px}
+.sync-btn[data-s=ok]{color:var(--good)}
+.sync-btn[data-s=error]{color:var(--bad)}
+.sync-btn[data-s=busy] svg{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.acc-mail{font-weight:650;overflow-wrap:anywhere}
+input[type=email],input[type=password]{width:100%;font-size:16px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);-webkit-appearance:none;appearance:none}
+input[type=email]:focus,input[type=password]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+@media (max-width:420px){.sync-btn span{display:none}}
+
 /* Statistik */
 .statbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin-bottom:22px;text-align:left;border:0;width:100%}
 .statbar div{display:grid;gap:2px}
@@ -442,7 +453,7 @@ const isIPhone = /iPhone|iPod/.test(ua);
 const isMac = !isIOS && /Macintosh/.test(ua);
 const isSafari = /Safari/.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS|Edg\//.test(ua);
 const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
-const ls = { get(k){ try { return localStorage.getItem(k) } catch { return null } }, set(k,v){ try { localStorage.setItem(k,v) } catch {} } };
+const ls = { get(k){ try { return localStorage.getItem(k) } catch { return null } }, set(k,v){ try { localStorage.setItem(k,v) } catch {} }, rm(k){ try { localStorage.removeItem(k) } catch {} } };
 
 /* Texte auf der Karte in der Sprache der Karte */
 const L = {
@@ -478,6 +489,7 @@ const I = {
   edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>',
   up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>',
   down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10l6 6 6-6"/></svg>',
+  cloud:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10.5a4 4 0 00.6-7.95A6 6 0 006.2 9.1 4.5 4.5 0 007 18z"/></svg>',
   share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 8l5-5 5 5M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>'
 };
 
@@ -506,12 +518,14 @@ async function run(name, mode, fn){
 }
 const all = n => run(n, 'readonly', s => s.getAll());
 const get = (n, k) => run(n, 'readonly', s => s.get(k));
-const put = (n, v) => run(n, 'readwrite', s => s.put(v));
-const del = (n, k) => run(n, 'readwrite', s => s.delete(k));
-async function putMany(n, list){ return run(n, 'readwrite', s => { list.forEach(v => s.put(v)) }) }
+const SYNCED = {subjects:'subject', cards:'card', lessons:'lesson', media:'media'};
+function stamp(n, v){ if (SYNCED[n]) { v._u = Date.now(); v._d = 1; if (n === 'media') v._up = 0; scheduleSync() } return v }
+const put = (n, v, raw) => run(n, 'readwrite', s => s.put(raw ? v : stamp(n, v)));
+const del = (n, k, raw) => run(n, 'readwrite', s => s.delete(k)).then(r => { if (!raw && SYNCED[n]) addTomb(SYNCED[n], k); return r });
+async function putMany(n, list, raw){ return run(n, 'readwrite', s => { list.forEach(v => s.put(raw ? v : stamp(n, v))) }) }
 
 /* ---------- Zustand ---------- */
-const state = { subjects:[], cards:[], lessons:[], stats:{id:'stats', days:{}}, view:{name:'home'}, draft:null, session:null, err:'' };
+const state = { subjects:[], cards:[], lessons:[], stats:{id:'stats', days:{}}, remoteStats:{id:'remoteStats', map:{}}, tombs:[], device:'', sync:{status:'off', last:+ls.get('sync-last') || 0, err:''}, pendingReload:false, view:{name:'home'}, draft:null, session:null, err:'' };
 const subj = id => state.subjects.find(s => s.id === id);
 const cardById = id => state.cards.find(c => c.id === id);
 const cardsOf = sid => state.cards.filter(c => c.subjectId === sid).sort((a,b) => a.created - b.created);
@@ -520,8 +534,9 @@ const cardsOf = sid => state.cards.filter(c => c.subjectId === sid).sort((a,b) =
 const mediaCache = new Map();
 async function mediaURL(id){
   if (mediaCache.has(id)) return mediaCache.get(id);
-  const m = await get('media', id);
-  if (!m) return null;
+  let m = await get('media', id);
+  if (m && !m.data) m = await downloadMedia(m);
+  if (!m || !m.data) return null;
   const r = {url: URL.createObjectURL(new Blob([m.data], {type:m.type})), type:m.type, name:m.name, data:m.data};
   mediaCache.set(id, r); return r;
 }
@@ -575,7 +590,11 @@ function ask({title, text, ok='OK', danger=false}){
     modalResolve = res;
   });
 }
-function go(view){ state.view = view; state.err = ''; render(); window.scrollTo(0, 0) }
+function go(view){
+  state.view = view; state.err = '';
+  if (state.pendingReload && ['home','subject','stats'].includes(view.name)) { state.pendingReload = false; load().then(() => { render(); window.scrollTo(0, 0) }); return }
+  render(); window.scrollTo(0, 0);
+}
 
 /* ---------- Ansichten ---------- */
 function render(){
@@ -599,6 +618,7 @@ function installHint(){
 
 function viewHome(){
   barEl.innerHTML = `<div class="bar-in"><div class="bar-title brand"><span class="brand-mark"></span>Karteikarten</div>
+    <button class="btn ghost sync-btn" data-action="account" data-s="${state.sync.status}" aria-label="Synchronisierung">${I.cloud}<span id="sync-ind">${syncLabel()}</span></button>
     <button class="btn ghost" data-action="backup" style="color:var(--accent)">${I.box}Import</button></div>`;
   const s = state.subjects;
   if (!s.length) {
@@ -1023,6 +1043,255 @@ function reviewCard(id, i){
     ${c.type === 'basic' ? basicExamBody(c, a, T, true) : choiceInner(c, a, true, r, T)}</article>`;
 }
 
+/* ---------- Synchronisierung (Supabase) ---------- */
+const SYNC = {url:'https://yeenfzcarotocafqsknd.supabase.co', key:'sb_publishable_O6JWc3Ky2z4QridvRBlvUw_t6okWiqR'};
+const syncConfigured = () => /^https:\/\//.test(SYNC.url) && SYNC.key.length > 20 && !SYNC.key.startsWith('__');
+const session = { get(){ try { return JSON.parse(ls.get('sb-session') || 'null') } catch { return null } }, set(v){ ls.set('sb-session', JSON.stringify(v)) }, clear(){ ls.rm('sb-session') } };
+const syncReady = () => syncConfigured() && !!session.get();
+function syncLabel(){
+  const st = state.sync.status;
+  if (!syncConfigured()) return 'Lokal';
+  if (!session.get()) return 'Anmelden';
+  return st === 'busy' ? 'Sync …' : st === 'offline' ? 'Offline' : st === 'error' ? 'Sync-Fehler' : 'Synchron';
+}
+function setSync(status, err){
+  state.sync.status = status; state.sync.err = err ? String(err.message || err) : '';
+  if (status === 'ok') { state.sync.last = Date.now(); ls.set('sync-last', String(state.sync.last)) }
+  const el = document.getElementById('sync-ind'); if (el) { el.textContent = syncLabel(); el.parentNode.dataset.s = status }
+  const info = document.getElementById('acc-status'); if (info) info.textContent = syncStatusText();
+}
+function syncStatusText(){
+  const s = state.sync;
+  if (s.status === 'busy') return 'Synchronisiere …';
+  if (s.status === 'offline') return 'Keine Internetverbindung. Änderungen werden gespeichert und später abgeglichen.';
+  if (s.status === 'error') return 'Letzter Versuch fehlgeschlagen' + (s.err ? `: ${s.err}` : '') + '. Die App versucht es später erneut.';
+  return s.last ? `Zuletzt synchronisiert: ${new Date(s.last).toLocaleString('de-CH', {day:'numeric', month:'numeric', hour:'2-digit', minute:'2-digit'})}` : 'Noch nicht synchronisiert.';
+}
+function addTomb(kind, id){
+  state.tombs = state.tombs.filter(t => !(t.kind === kind && t.id === id));
+  state.tombs.push({kind, id, at:Date.now()});
+  put('meta', {id:'tombs', list:state.tombs}, true).catch(() => {});
+  scheduleSync();
+}
+function saveSession(j){
+  if (!j || !j.access_token || !j.user) throw new Error('Anmeldung fehlgeschlagen');
+  session.set({access_token:j.access_token, refresh_token:j.refresh_token, expires_at:j.expires_at || Math.floor(Date.now() / 1000) + (j.expires_in || 3600), user:{id:j.user.id, email:j.user.email}});
+}
+function authMsg(j){
+  const m = String((j && (j.msg || j.message || j.error_description || j.error)) || '');
+  if (/invalid login/i.test(m)) return 'E-Mail oder Passwort ist falsch.';
+  if (/not confirmed/i.test(m)) return 'Bitte bestätige zuerst deine E-Mail-Adresse über den Link in der Mail.';
+  if (/already registered|already exists/i.test(m)) return 'Für diese E-Mail gibt es schon ein Konto. Melde dich an.';
+  if (/password/i.test(m) && /(6|characters|short|weak)/i.test(m)) return 'Das Passwort ist zu kurz oder zu schwach (mindestens 6 Zeichen).';
+  if (/rate limit|too many/i.test(m)) return 'Zu viele Versuche. Warte kurz und versuche es dann noch einmal.';
+  return m || 'Das hat nicht geklappt. Prüfe deine Internetverbindung.';
+}
+async function authCall(path, body){
+  const r = await fetch(SYNC.url + '/auth/v1/' + path, {method:'POST', headers:{apikey:SYNC.key, 'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(authMsg(j)); e.status = r.status; throw e }
+  return j;
+}
+let refreshing = null;
+async function refreshSession(){
+  if (refreshing) return refreshing;
+  refreshing = (async () => {
+    const s = session.get(); if (!s) throw new Error('auth');
+    try { saveSession(await authCall('token?grant_type=refresh_token', {refresh_token:s.refresh_token})) }
+    catch (e) { if (e.status === 400 || e.status === 401 || e.status === 403) { session.clear(); throw new Error('auth') } throw e }
+  })();
+  try { await refreshing } finally { refreshing = null }
+}
+async function accessToken(){
+  const s = session.get(); if (!s) throw new Error('auth');
+  if (Date.now() > s.expires_at * 1000 - 60000) await refreshSession();
+  return session.get().access_token;
+}
+async function sb(path, opts = {}, retry = true){
+  const headers = {apikey:SYNC.key, Authorization:'Bearer ' + await accessToken(), ...(opts.headers || {})};
+  const r = await fetch(SYNC.url + path, {...opts, headers});
+  if ((r.status === 401 || r.status === 403) && retry && /jwt|token|expired/i.test(await r.clone().text())) { await refreshSession(); return sb(path, opts, false) }
+  if (!r.ok) { let m = ''; try { const j = await r.json(); m = j.message || j.msg || j.error || '' } catch {} const e = new Error(m || 'Server antwortet mit ' + r.status); e.status = r.status; throw e }
+  return r;
+}
+async function downloadMedia(m){
+  if (!syncReady() || !navigator.onLine) return m;
+  try {
+    const r = await sb(`/storage/v1/object/authenticated/media/${session.get().user.id}/${encodeURIComponent(m.id)}`);
+    m.data = await r.arrayBuffer(); await put('media', m, true); return m;
+  } catch { return m }
+}
+let syncTimer = null, syncing = null, syncAgain = false;
+function scheduleSync(ms = 2500){ if (!syncReady()) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => sync(), ms) }
+const STORE_OF = {subject:'subjects', card:'cards', lesson:'lessons', media:'media'};
+const busyView = () => ['edit','lesson-edit','learn','exam','lesson'].includes(state.view.name);
+async function sync(){
+  if (!syncReady()) { setSync(syncConfigured() ? 'signedout' : 'off'); return }
+  if (!navigator.onLine) { setSync('offline'); return }
+  if (syncing) { syncAgain = true; return syncing }
+  syncing = (async () => {
+    setSync('busy');
+    try {
+      const me = session.get().user.id;
+      const meta = (await get('meta', 'sync')) || {id:'sync', since:'', linked:''};
+      const first = meta.linked !== me;
+      if (first) { await markAllDirty(); meta.since = '' }
+      let changed = false, maxSeen = meta.since, from = meta.since ? new Date(new Date(meta.since).getTime() - 15000).toISOString() : '1970-01-01T00:00:00Z';
+      for (;;) {
+        const r = await sb(`/rest/v1/items?select=kind,id,data,deleted,updated_at,server_at&server_at=gt.${encodeURIComponent(from)}&order=server_at.asc&limit=500`);
+        const rows = await r.json();
+        for (const row of rows) { if (await applyRemote(row)) changed = true; if (!maxSeen || new Date(row.server_at) > new Date(maxSeen)) maxSeen = row.server_at }
+        if (rows.length < 500) break;
+        from = rows[rows.length - 1].server_at;
+      }
+      if (first && await mergeSameName()) changed = true;
+      await pushAll(me);
+      meta.since = maxSeen; meta.linked = me; await put('meta', meta, true);
+      if (changed) { if (busyView()) state.pendingReload = true; else { await load(); render() } }
+      setSync('ok');
+    } catch (e) {
+      if (e.message === 'auth') { setSync('signedout'); toast('Bitte melde dich erneut an, um zu synchronisieren.') }
+      else setSync(navigator.onLine ? 'error' : 'offline', e);
+    } finally {
+      syncing = null;
+      if (syncAgain) { syncAgain = false; scheduleSync(800) }
+    }
+  })();
+  return syncing;
+}
+async function markAllDirty(){
+  for (const n of Object.keys(SYNCED)) {
+    const list = await all(n);
+    list.forEach(v => { v._u = v._u || Date.now(); v._d = 1; if (n === 'media') v._up = 0 });
+    await putMany(n, list, true);
+  }
+  state.stats._d = 1;
+}
+const mergeExams = (a = [], b = []) => [...a, ...b.filter(x => !a.some(y => y.at === x.at))].sort((x, y) => x.at - y.at).slice(-10);
+async function applyRemote(row){
+  if (row.kind === 'stats') {
+    if (row.id === state.device || !row.data || typeof row.data.days !== 'object') return false;
+    state.remoteStats.map[row.id] = row.data.days; await put('meta', state.remoteStats, true); return true;
+  }
+  const n = STORE_OF[row.kind]; if (!n) return false;
+  const local = await get(n, row.id), ru = +row.updated_at || 0;
+  if (local && (local._u || 0) >= ru) return false;
+  const tomb = state.tombs.find(t => t.kind === row.kind && t.id === row.id);
+  if (tomb && tomb.at >= ru) return false;
+  if (row.deleted) {
+    if (local) { await del(n, row.id, true); const c = mediaCache.get(row.id); if (c) { URL.revokeObjectURL(c.url); mediaCache.delete(row.id) } }
+    return !!local;
+  }
+  const d = row.data || {};
+  let v;
+  if (row.kind === 'media') v = {id:String(row.id), name:String(d.name || 'Datei'), type:String(d.type || 'application/octet-stream'), size:+d.size || 0, data: local ? local.data : null, _up:1};
+  else if (row.kind === 'card') v = normCard({...d, id:row.id});
+  else if (row.kind === 'lesson') v = normLesson({...d, id:row.id});
+  else v = {id:String(row.id), name:String(d.name || 'Fach'), color:safeColor(d.color), created:+d.created || Date.now(), exams:mergeExams(local && local.exams, Array.isArray(d.exams) ? d.exams.filter(x => x && +x.max > 0).map(x => ({at:+x.at || 0, pts:+x.pts || 0, max:+x.max})) : [])};
+  if (!v) return false;
+  v._u = ru; v._d = 0;
+  if (row.kind === 'subject' && local && (local.exams || []).length > (Array.isArray(d.exams) ? d.exams.length : 0)) { v._d = 1; v._u = Math.max(ru, local._u || 0) + 1 }
+  await put(n, v, true);
+  return true;
+}
+async function mergeSameName(){
+  const subs = await all('subjects'), mine = subs.filter(x => x._d), theirs = subs.filter(x => !x._d);
+  const norm = x => String(x || '').trim().toLowerCase();
+  let moved = false;
+  for (const s of mine) {
+    const t = theirs.find(x => norm(x.name) === norm(s.name)); if (!t) continue;
+    const cs = (await all('cards')).filter(c => c.subjectId === s.id), lsn = (await all('lessons')).filter(l => l.subjectId === s.id);
+    cs.forEach(c => c.subjectId = t.id); lsn.forEach(l => l.subjectId = t.id);
+    await putMany('cards', cs); await putMany('lessons', lsn);
+    t.exams = mergeExams(t.exams, s.exams); await put('subjects', t);
+    await del('subjects', s.id, true); moved = true;
+  }
+  return moved;
+}
+async function pushAll(me){
+  const rows = [];
+  for (const [n, kind] of Object.entries(SYNCED)) {
+    for (const v of (await all(n)).filter(x => x._d)) {
+      if (kind === 'media') {
+        if (!v.data) continue;
+        if (!v._up) await sb(`/storage/v1/object/media/${me}/${encodeURIComponent(v.id)}`, {method:'POST', headers:{'Content-Type':v.type || 'application/octet-stream', 'x-upsert':'true'}, body:new Blob([v.data], {type:v.type})});
+        rows.push({row:{kind, id:v.id, data:{name:v.name, type:v.type, size:v.size}, deleted:false, updated_at:v._u || Date.now()}, n, v});
+      } else {
+        const {_u, _d, _up, ...data} = v;
+        rows.push({row:{kind, id:v.id, data, deleted:false, updated_at:_u || Date.now()}, n, v});
+      }
+    }
+  }
+  const tombs = state.tombs.slice();
+  tombs.forEach(t => rows.push({row:{kind:t.kind, id:t.id, data:null, deleted:true, updated_at:t.at}, tomb:t}));
+  if (state.stats._d) rows.push({row:{kind:'stats', id:state.device, data:{days:state.stats.days}, deleted:false, updated_at:Date.now()}, stats:true});
+  // in Paketen von höchstens ca. 1 MB senden
+  let chunk = [], size = 0;
+  const send = async () => {
+    if (!chunk.length) return;
+    await sb('/rest/v1/items?on_conflict=user_id,kind,id', {method:'POST', headers:{'Content-Type':'application/json', Prefer:'resolution=merge-duplicates,return=minimal'}, body:JSON.stringify(chunk.map(x => x.row))});
+    for (const x of chunk) {
+      if (x.n) { const cur = await get(x.n, x.v.id); if (cur && cur._u === x.v._u) { cur._d = 0; if (x.n === 'media') cur._up = 1; await put(x.n, cur, true) } }
+      else if (x.tomb) {
+        state.tombs = state.tombs.filter(t => t !== x.tomb);
+        if (x.tomb.kind === 'media') sb(`/storage/v1/object/media/${me}/${encodeURIComponent(x.tomb.id)}`, {method:'DELETE'}).catch(() => {});
+      } else if (x.stats) { state.stats._d = 0; await put('meta', state.stats, true) }
+    }
+    await put('meta', {id:'tombs', list:state.tombs}, true);
+    chunk = []; size = 0;
+  };
+  for (const x of rows) { const l = JSON.stringify(x.row).length; if (size + l > 900000) await send(); chunk.push(x); size += l }
+  await send();
+}
+function accountSheet(mode){
+  if (!syncConfigured()) {
+    openSheet(`<h2>Synchronisierung</h2><p>Die Synchronisierung ist in dieser Version noch nicht eingerichtet. Deine Daten bleiben auf diesem Gerät.</p>
+      <div class="sheet-actions"><button class="btn" data-action="sheet-no">Schliessen</button></div>`); return;
+  }
+  const s = session.get();
+  if (s) {
+    openSheet(`<h2>Synchronisierung</h2>
+      <p>Angemeldet als</p><p class="acc-mail" style="margin-top:-12px;color:var(--ink)"></p>
+      <p id="acc-status">${esc(syncStatusText())}</p>
+      <p class="small">Melde dich auf MacBook, iPad und iPhone mit demselben Konto an. Dann haben alle Geräte denselben Stand.</p>
+      <div class="sheet-actions"><button class="btn" data-action="sign-out">Abmelden</button><button class="btn primary" data-action="sync-now">Jetzt synchronisieren</button></div>`);
+    layer.querySelector('.acc-mail').textContent = s.user.email || '';
+    return;
+  }
+  const up = mode === 'up';
+  openSheet(`<form class="form" data-form="auth" data-mode="${up ? 'up' : 'in'}" style="gap:14px" novalidate>
+    <h2>${up ? 'Konto erstellen' : 'Anmelden'}</h2>
+    <p>${up ? 'Einmal ein Konto erstellen, danach auf jedem Gerät damit anmelden. Du bekommst eine Mail zur Bestätigung.' : 'Mit deinem Konto gleicht die App Karten, Lektionen und Fortschritt zwischen deinen Geräten ab.'}</p>
+    <div class="field"><label class="lbl" for="a-mail">E-Mail</label><input type="email" id="a-mail" autocomplete="email" autocapitalize="none" spellcheck="false" required></div>
+    <div class="field"><label class="lbl" for="a-pw">Passwort</label><input type="password" id="a-pw" autocomplete="${up ? 'new-password' : 'current-password'}" minlength="6" required>
+      ${up ? '<span class="sub" style="margin-top:2px">Mindestens 6 Zeichen. Am besten im Passwort-Manager speichern.</span>' : ''}</div>
+    <div class="err" id="a-err" role="alert" hidden></div>
+    <div class="sheet-actions"><button type="button" class="btn" data-action="sheet-no">Abbrechen</button><button type="submit" class="btn primary">${up ? 'Konto erstellen' : 'Anmelden'}</button></div>
+    <button type="button" class="link-btn" data-action="account-mode" data-m="${up ? 'in' : 'up'}" style="justify-self:center">${up ? 'Ich habe schon ein Konto' : 'Neues Konto erstellen'}</button></form>`);
+}
+async function submitAuth(form){
+  const up = form.dataset.mode === 'up', mail = $('#a-mail').value.trim(), pw = $('#a-pw').value, err = $('#a-err');
+  const fail = m => { err.textContent = m; err.hidden = false };
+  if (!/^\S+@\S+\.\S+$/.test(mail)) return fail('Bitte gib eine gültige E-Mail-Adresse ein.');
+  if (pw.length < 6) return fail('Das Passwort braucht mindestens 6 Zeichen.');
+  const btn = form.querySelector('[type=submit]'); btn.disabled = true;
+  try {
+    if (up) {
+      const j = await authCall('signup', {email:mail, password:pw});
+      if (j.access_token) saveSession(j);
+      else { openSheet(`<h2>Bestätige deine E-Mail</h2><p>Wir haben dir eine Mail an <b></b> geschickt. Tippe auf den Link darin. Danach meldest du dich hier in der App mit deiner E-Mail und deinem Passwort an.</p>
+        <div class="sheet-actions"><button class="btn primary" data-action="account-mode" data-m="in">Zur Anmeldung</button></div>`); layer.querySelector('b').textContent = mail; return }
+    } else saveSession(await authCall('token?grant_type=password', {email:mail, password:pw}));
+    closeSheet(); toast('Angemeldet. Deine Daten werden abgeglichen.'); setSync('busy'); await sync(); render();
+  } catch (e) { fail(e.message === 'Failed to fetch' ? 'Keine Verbindung zum Server. Prüfe dein Internet.' : e.message); btn.disabled = false }
+}
+async function signOut(){
+  if (!(await ask({title:'Abmelden?', text:'Deine Karten bleiben auf diesem Gerät. Änderungen werden erst nach erneutem Anmelden wieder abgeglichen.', ok:'Abmelden'}))) return;
+  if (syncReady() && navigator.onLine) { try { await sync() } catch {} }
+  try { await fetch(SYNC.url + '/auth/v1/logout', {method:'POST', headers:{apikey:SYNC.key, Authorization:'Bearer ' + session.get().access_token}}) } catch {}
+  session.clear(); setSync('signedout'); toast('Abgemeldet'); render();
+}
+
 /* ---------- Fortschritt und Statistik ---------- */
 const dayKey = (t = Date.now()) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` };
 let statsSaving = Promise.resolve();
@@ -1031,8 +1300,18 @@ function record(sid, list){
   const k = dayKey(), d = state.stats.days[k] || (state.stats.days[k] = {r:0, t:0, s:{}});
   const ss = d.s[sid] || (d.s[sid] = {r:0, t:0});
   list.forEach(ok => { d.t++; ss.t++; if (ok) { d.r++; ss.r++ } });
+  state.stats._d = 1; scheduleSync();
   const snap = JSON.parse(JSON.stringify(state.stats));
   statsSaving = statsSaving.then(() => put('meta', snap)).catch(() => {});
+}
+function allDays(){
+  const out = {}, add = days => Object.entries(days || {}).forEach(([k, d]) => {
+    const o = out[k] || (out[k] = {r:0, t:0, s:{}}); o.r += +d.r || 0; o.t += +d.t || 0;
+    Object.entries(d.s || {}).forEach(([sid, x]) => { const y = o.s[sid] || (o.s[sid] = {r:0, t:0}); y.r += +x.r || 0; y.t += +x.t || 0 });
+  });
+  add(state.stats.days);
+  Object.entries(state.remoteStats.map).forEach(([did, days]) => { if (did !== state.device) add(days) });
+  return out;
 }
 function progressOf(sid){
   const cs = cardsOf(sid), sure = cs.filter(c => c.last === 'known').length, prac = cs.filter(c => c.last === 'again').length;
@@ -1040,13 +1319,14 @@ function progressOf(sid){
 }
 function quoteOf(sid){
   let r = 0, t = 0;
-  Object.values(state.stats.days).forEach(d => { const x = sid ? d.s && d.s[sid] : d; if (x) { r += x.r; t += x.t } });
+  Object.values(allDays()).forEach(d => { const x = sid ? d.s && d.s[sid] : d; if (x) { r += x.r; t += x.t } });
   return {r, t};
 }
 function streak(){
   let n = 0, t = Date.now();
-  if (!state.stats.days[dayKey(t)]) t -= 864e5;
-  while (state.stats.days[dayKey(t)]) { n++; t -= 864e5 }
+  const days = allDays();
+  if (!days[dayKey(t)]) t -= 864e5;
+  while (days[dayKey(t)]) { n++; t -= 864e5 }
   return n;
 }
 function overall(){
@@ -1069,7 +1349,7 @@ function progressBlock(s){
 function viewStats(){
   barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="home">${I.back}Fächer</button><div class="bar-title center">Statistik</div><div style="width:92px"></div></div>`;
   const ov = overall(), days = [];
-  for (let i = 6; i >= 0; i--) { const ts = Date.now() - i * 864e5, d = state.stats.days[dayKey(ts)] || {r:0, t:0}; days.push({ts, r:d.r, t:d.t}) }
+  for (let i = 6; i >= 0; i--) { const ts = Date.now() - i * 864e5, d = allDays()[dayKey(ts)] || {r:0, t:0}; days.push({ts, r:d.r, t:d.t}) }
   const maxT = Math.max(1, ...days.map(d => d.t)), wk = days.reduce((a, d) => ({r:a.r + d.r, t:a.t + d.t}), {r:0, t:0});
   const WD = ['So','Mo','Di','Mi','Do','Fr','Sa'];
   const exams = state.subjects.flatMap(s => (s.exams || []).map(x => ({...x, name:s.name}))).sort((a, b) => a.at - b.at).slice(-10);
@@ -1095,7 +1375,7 @@ function viewStats(){
     ${exams.length ? `<section class="card-box"><h2>Prüfungsverlauf</h2>
       <div class="trend">${exams.map(x => `<i style="height:${Math.max(4, pct(x.pts, x.max))}%" title="${esc(x.name)}: ${pct(x.pts, x.max)} % am ${fmtDate(x.at)}"></i>`).join('')}</div>
       <p class="note">Letzte ${exams.length} ${exams.length === 1 ? 'Prüfung' : 'Prüfungen'}, älteste links. Zuletzt: ${pct(exams[exams.length - 1].pts, exams[exams.length - 1].max)} % (${esc(exams[exams.length - 1].name)}).</p></section>` : ''}
-    <p class="note">Die Statistik zählt Antworten im Lernmodus, in Prüfungen und in Lektionen auf diesem Gerät. Über «Import» → «Backup» überträgst du sie mit.</p>`;
+    <p class="note">Die Statistik zählt Antworten im Lernmodus, in Prüfungen und in Lektionen${syncReady() ? ' auf all deinen angemeldeten Geräten' : ' auf diesem Gerät'}.</p>`;
 }
 
 /* ---------- Lektionen ---------- */
@@ -1403,14 +1683,14 @@ async function makeBackup(){
   try {
     const [subjects, cards, media, lessons, stats] = await Promise.all([all('subjects'), all('cards'), all('media'), all('lessons'), get('meta', 'stats')]);
     let offset = 0; const index = [], parts = [];
-    for (const m of media) { const len = m.data.byteLength; index.push({id:m.id, name:m.name, type:m.type, size:m.size, offset, length:len}); parts.push(m.data); offset += len }
+    for (const m of media.filter(x => x.data)) { const len = m.data.byteLength; index.push({id:m.id, name:m.name, type:m.type, size:m.size, offset, length:len}); parts.push(m.data); offset += len }
     const json = new TextEncoder().encode(JSON.stringify({app:'karteikarten', version:1, exported:new Date().toISOString(), subjects, cards, lessons, stats: stats || null, media:index}));
     const head = new TextEncoder().encode(MAGIC), lenBuf = new ArrayBuffer(4); new DataView(lenBuf).setUint32(0, json.byteLength, true);
     const blob = new Blob([head, lenBuf, json, ...parts], {type:'application/octet-stream'});
     const d = new Date(), stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     backupFile = new File([blob], `Karteikarten-Backup-${stamp}.kartei`, {type:'application/octet-stream'});
     const mb = (blob.size / 1048576).toFixed(1).replace('.', ',');
-    const info = `${subjects.length} ${subjects.length === 1 ? 'Fach' : 'Fächer'} · ${cards.length} ${cards.length === 1 ? 'Karte' : 'Karten'} · ${lessons.length} ${lessons.length === 1 ? 'Lektion' : 'Lektionen'} · ${media.length} ${media.length === 1 ? 'Anhang' : 'Anhänge'} · ${mb} MB`;
+    const info = `${subjects.length} ${subjects.length === 1 ? 'Fach' : 'Fächer'} · ${cards.length} ${cards.length === 1 ? 'Karte' : 'Karten'} · ${lessons.length} ${lessons.length === 1 ? 'Lektion' : 'Lektionen'} · ${index.length} ${index.length === 1 ? 'Anhang' : 'Anhänge'} · ${mb} MB`;
     if (isIOS && canShareFile(backupFile)) {
       out.innerHTML = `<p class="small muted" style="margin-bottom:8px">${info}</p><button class="btn wide" data-action="share-backup">${I.share}Teilen oder in «Dateien» sichern</button>`;
     } else {
@@ -1533,6 +1813,10 @@ const actions = {
   'check': () => state.view.name === 'lesson' ? lessonCheck() : checkAnswer(),
   'convert': el => convertCard(el.dataset.id),
   'stats': () => go({name:'stats'}),
+  'account': () => accountSheet(),
+  'account-mode': el => accountSheet(el.dataset.m),
+  'sync-now': () => { setSync('busy'); sync() },
+  'sign-out': () => signOut(),
   'lesson-open': el => startLesson(el.dataset.id),
   'lesson-next': () => lessonNext(),
   'lesson-exit': () => go({name:'subject', id:lessonById(state.lp.id).subjectId}),
@@ -1596,6 +1880,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('submit', e => {
   e.preventDefault();
   if (e.target.dataset.form === 'subject') createSubject();
+  else if (e.target.dataset.form === 'auth') submitAuth(e.target);
 });
 function onBind(e){
   if (e.target.classList && e.target.classList.contains('grow-ta')) autoGrow(e.target);
@@ -1629,11 +1914,25 @@ async function load(){
   state.cards = c;
   state.lessons = (await all('lessons')).sort((a, b) => a.created - b.created);
   const st = await get('meta', 'stats'); state.stats = st && st.days ? st : {id:'stats', days:{}};
+  const rs = await get('meta', 'remoteStats'); state.remoteStats = rs && rs.map ? rs : {id:'remoteStats', map:{}};
+  const tb = await get('meta', 'tombs'); state.tombs = tb && Array.isArray(tb.list) ? tb.list : [];
+  let dv = await get('meta', 'device'); if (!dv) { dv = {id:'device', did:uid()}; await put('meta', dv, true) } state.device = dv.did;
 }
 (async () => {
   try { await load() } catch { mainEl.innerHTML = '<div class="empty"><h1>Speicher nicht verfügbar</h1><p>Dieser Browser erlaubt keine Speicherung. Öffne die App in Safari und nicht im privaten Modus.</p></div>'; return }
+  if (/access_token=|error_description=/.test(location.hash)) {
+    const h = new URLSearchParams(location.hash.slice(1));
+    history.replaceState(null, '', location.pathname + location.search);
+    if (h.get('error_description')) toast('Bestätigung fehlgeschlagen: ' + h.get('error_description'));
+    else toast(standalone ? 'E-Mail bestätigt. Melde dich jetzt an.' : 'E-Mail bestätigt. Öffne die installierte App und melde dich dort an.');
+  }
   render();
   try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist() } catch {}
+  if (syncReady()) sync(); else setSync(syncConfigured() ? 'signedout' : 'off');
+  window.addEventListener('online', () => scheduleSync(500));
+  window.addEventListener('offline', () => setSync('offline'));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') scheduleSync(300); else if (syncReady()) sync() });
+  setInterval(() => { if (document.visibilityState === 'visible') scheduleSync(0) }, 120000);
 })();
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
