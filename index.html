@@ -1049,7 +1049,7 @@ function cardRow(c, f, sel){
     ${L && f === 'all' ? `<span class="tag t-lec">${esc(L.name)}</span>` : ''}${m ? `<span class="tag">${I.clip}${m}</span>` : ''}</div>
     <div class="crow-q">${fmt(c.question) || '<span class="muted">(nur Anhang)</span>'}</div>
     ${c.type === 'basic' && !picking ? `<button class="link-btn" data-action="convert" data-id="${esc(c.id)}">${I.flip}In Choice-Frage umwandeln</button>` : ''}</div>
-    ${picking ? '' : `<button class="icon-btn danger" data-action="del-card" data-id="${esc(c.id)}" aria-label="Karte löschen">${I.trash}</button>`}</li>`;
+    ${picking ? '' : `<button class="icon-btn" data-action="edit-card" data-id="${esc(c.id)}" aria-label="Karte bearbeiten">${I.edit}</button><button class="icon-btn danger" data-action="del-card" data-id="${esc(c.id)}" aria-label="Karte löschen">${I.trash}</button>`}</li>`;
 }
 
 /* ---------- Formular für neue Karten ---------- */
@@ -1072,7 +1072,7 @@ function mediaEditor(key, label, scope){
 function viewEdit(){
   const d = state.draft, s = subj(d.subjectId);
   barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="cancel-edit">${I.back}Abbrechen</button>
-    <div class="bar-title center">${d.convertFrom ? 'Karte umwandeln' : 'Neue Karte'}</div><div style="width:92px"></div></div>`;
+    <div class="bar-title center">${d.convertFrom ? 'Karte umwandeln' : d.editId ? 'Karte bearbeiten' : 'Neue Karte'}</div><div style="width:92px"></div></div>`;
   const opts = d.type === 'single' || d.type === 'multi';
   mainEl.innerHTML = `<form class="form" data-form="card" style="--c:${safeColor(s && s.color)}" novalidate>
     ${d.convertFrom ? `<p class="info">Die Antwort deiner Karteikarte steht jetzt als <b>${d.type === 'kprim' ? 'richtige Aussage 1' : 'richtige Antwort A'}</b>. Ergänze ${d.type === 'kprim' ? 'die weiteren Aussagen' : 'falsche Antworten'} und Erklärungen. Beim Speichern ersetzt die neue Karte deine Karteikarte.</p>` : ''}
@@ -1107,7 +1107,7 @@ function viewEdit(){
         <textarea class="fmt" rows="2" data-bind="opt.${i}.explanation" placeholder="Erklärung: Warum ist diese Aussage richtig bzw. falsch?" aria-label="Erklärung zu Aussage ${i + 1}">${esc(o.explanation)}</textarea>
         ${mediaEditor('o' + i, 'Anhang zur Erklärung')}</div>`).join('')}</div>` : ''}
     ${state.err ? `<div class="err" role="alert">${esc(state.err)}</div>` : ''}
-    <div class="form-actions">${d.convertFrom ? '' : `<button type="button" class="btn" data-action="save-card" data-again="1">Speichern &amp; nächste</button>`}
+    <div class="form-actions">${d.convertFrom || d.editId ? '' : `<button type="button" class="btn" data-action="save-card" data-again="1">Speichern &amp; nächste</button>`}
       <button type="button" class="btn primary" data-action="save-card">Speichern</button></div>
   </form>`;
 }
@@ -1156,7 +1156,7 @@ async function saveDraft(again){
   const created = [];
   const storeFiles = list => storeMedia(list, created);
   try {
-    const orig = d.convertFrom ? cardById(d.convertFrom) : null;
+    const orig = (d.convertFrom || d.editId) ? cardById(d.convertFrom || d.editId) : null;
     const c = {id: orig ? orig.id : uid(), subjectId:d.subjectId, type:d.type, lang:d.lang, question:d.question.trim(), qMedia: await storeFiles(d.qMedia),
       created: orig ? orig.created : Date.now(), stats: orig && orig.stats ? orig.stats : {known:0, again:0}};
     if (d.lectureId && lecturesOf(d.subjectId).some(L => L.id === d.lectureId)) c.lectureId = d.lectureId;
@@ -1168,7 +1168,7 @@ async function saveDraft(again){
       const keep = new Set(mediaIds(c));
       for (const m of mediaIds(orig)) if (!keep.has(m)) await del('media', m).catch(() => {});
       state.cards = state.cards.map(x => x.id === c.id ? c : x);
-      toast('Karte umgewandelt');
+      toast(d.convertFrom ? 'Karte umgewandelt' : 'Änderungen gespeichert');
     } else { state.cards.push(c); toast('Karte gespeichert') }
     ls.set('last-lang', d.lang);
     if (again) { state.draft = newDraft(d.subjectId, d.type, d.lang, d.lectureId); state.err = ''; render(); window.scrollTo(0, 0) }
@@ -2045,6 +2045,19 @@ async function deleteLesson(id){
   } catch { toast('Löschen hat nicht geklappt') }
 }
 
+/* ---------- Karte bearbeiten ---------- */
+const draftSnapshot = d => ({t:d.type, l:d.lang, s:d.subjectId, lec:d.lectureId, q:d.question, a:d.answer, qm:d.qMedia.length, am:d.aMedia.length,
+  o:d.options.map(o => [o.text, o.correct, o.explanation, o.media.length])});
+function editCard(id){
+  const c = cardById(id); if (!c) return;
+  const d = newDraft(c.subjectId, c.type, c.lang, c.lectureId || '');
+  d.editId = c.id; d.question = c.question || ''; d.qMedia = (c.qMedia || []).slice();
+  if (c.type === 'basic') { d.answer = c.answer || ''; d.aMedia = (c.aMedia || []).slice() }
+  else d.options = (c.options || []).map(o => ({text:o.text || '', correct: c.type === 'kprim' ? o.correct === true : !!o.correct, explanation:o.explanation || '', media:(o.media || []).slice()}));
+  d.snap = JSON.stringify(draftSnapshot(d));
+  state.draft = d; go({name:'edit', back:state.view.lec});
+}
+
 /* ---------- Umwandeln ---------- */
 function convertCard(id){
   const c = cardById(id); if (!c || c.type !== 'basic') return;
@@ -2273,6 +2286,7 @@ const actions = {
   'cancel-edit': async () => {
     const d = state.draft, dirty = d.question.trim() || d.answer.trim() || d.qMedia.length || d.options.some(o => o.text.trim() || o.explanation.trim());
     if (d.convertFrom) { if (!(await ask({title:'Umwandlung abbrechen?', text:'Deine Karteikarte bleibt unverändert.', ok:'Abbrechen', danger:true}))) return }
+    else if (d.editId) { if (JSON.stringify(draftSnapshot(d)) !== d.snap && !(await ask({title:'Änderungen verwerfen?', text:'Die Karte bleibt so, wie sie vorher war.', ok:'Verwerfen', danger:true}))) return }
     else if (dirty && !(await ask({title:'Karte verwerfen?', text:'Was du eingegeben hast, geht verloren.', ok:'Verwerfen', danger:true}))) return;
     const sid = d.subjectId, back = state.view.back; state.draft = null; go({name:'subject', id:sid, lec:back || 'all'});
   },
@@ -2317,6 +2331,7 @@ const actions = {
   },
   'check': () => state.view.name === 'lesson' ? lessonCheck() : checkAnswer(),
   'convert': el => convertCard(el.dataset.id),
+  'edit-card': el => editCard(el.dataset.id),
   'video-add': () => videoSheet(),
   'vmode': el => { const form = el.closest('form'); form.dataset.mode = el.dataset.m;
     form.querySelectorAll('[data-action=vmode]').forEach(b => b.classList.toggle('on', b === el));
