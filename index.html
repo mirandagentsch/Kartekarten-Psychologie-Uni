@@ -891,14 +891,18 @@ async function moveSelected(lecId){
   } catch { toast('Verschieben hat nicht geklappt') }
 }
 function learnSheet(sid){
-  const lecs = lecturesOf(sid), all = cardsOf(sid);
-  if (!lecs.length) return startLearn(sid);
+  const lecs = lecturesOf(sid), all = cardsOf(sid), avail = TYPES.filter(t => all.some(c => c.type === t));
+  if (!lecs.length && avail.length < 2) return startLearn(sid);
   const f = state.view.lec && state.view.lec !== 'all' ? state.view.lec : null;
   const keys = [...lecs.map(L => L.id), ...(all.some(c => !lecOf(c)) ? ['none'] : [])];
-  if (!lecSel || lecSel.sid !== sid || lecSel.mode !== 'learn') lecSel = {sid, mode:'learn', sel:new Set(f ? [f] : keys)};
-  const n = all.filter(c => lecSel.sel.has(lecKey(c))).length;
-  openSheet(`<h2>Was möchtest du lernen?</h2><p>Wähle eine oder mehrere Vorlesungen.</p>
-    ${lecPicker(sid, lecSel.sel, 'lsel-toggle')}
+  if (!lecSel || lecSel.sid !== sid || lecSel.mode !== 'learn') lecSel = {sid, mode:'learn', sel:new Set(f ? [f] : keys), types:new Set(TYPES)};
+  if (!lecSel.types) lecSel.types = new Set(TYPES);
+  const inLec = lecs.length ? all.filter(c => lecSel.sel.has(lecKey(c))) : all;
+  const n = inLec.filter(c => lecSel.types.has(c.type)).length;
+  openSheet(`<h2>Was möchtest du lernen?</h2><p>Wähle ${lecs.length ? 'Vorlesungen und ' : ''}Fragetypen.</p>
+    ${lecs.length ? lecPicker(sid, lecSel.sel, 'lsel-toggle') : ''}
+    ${avail.length > 1 ? `<div class="setup-group"><span class="lbl">Fragetypen</span>
+      ${avail.map(t => `<button type="button" class="check-row ${lecSel.types.has(t) ? 'on' : ''}" data-action="ltype-toggle" data-t="${t}"><span class="box"></span>${t === 'basic' ? 'Karteikarten' : TYPE_NAMES[t]}<span class="n">${inLec.filter(c => c.type === t).length}</span></button>`).join('')}</div>` : ''}
     <div class="sheet-actions"><button class="btn" data-action="sheet-no">Abbrechen</button><button class="btn primary" data-action="learn-go" ${n ? '' : 'disabled'}>Los (${n} ${n === 1 ? 'Karte' : 'Karten'})</button></div>`);
 }
 function lecPicker(sid, sel, action){
@@ -1181,10 +1185,10 @@ async function saveDraft(again){
 }
 
 /* ---------- Lernmodus ---------- */
-function startLearn(sid, sel){
-  const ids = cardsOf(sid).filter(c => !sel || sel.has(lecKey(c))).map(c => c.id);
+function startLearn(sid, sel, types){
+  const ids = cardsOf(sid).filter(c => (!sel || sel.has(lecKey(c))) && (!types || types.has(c.type))).map(c => c.id);
   if (!ids.length) return;
-  state.session = {sid, sel: sel ? new Set(sel) : null, queue:ids, total:ids.length, done:0, known:0, again:0, pts:0, maxPts:0, seen:new Set(), cur:null};
+  state.session = {sid, sel: sel ? new Set(sel) : null, types: types ? new Set(types) : null, queue:ids, total:ids.length, done:0, known:0, again:0, pts:0, maxPts:0, seen:new Set(), cur:null};
   nextCard();
 }
 function nextCard(){
@@ -2304,9 +2308,10 @@ const actions = {
   'rm-media': el => { (el.dataset.scope === 'l' ? lessonMedia : draftMedia)(el.dataset.key).splice(+el.dataset.i, 1); render() },
   'save-card': (el, e) => { e.preventDefault(); saveDraft(!!el.dataset.again) },
   'del-card': el => deleteCard(el.dataset.id),
-  'learn': () => state.view.name === 'done' ? startLearn(state.session.sid, state.session.sel) : learnSheet(state.view.id),
+  'learn': () => state.view.name === 'done' ? startLearn(state.session.sid, state.session.sel, state.session.types) : learnSheet(state.view.id),
   'lsel-toggle': el => { toggleLecSel(lecSel.sel, el.dataset.l, lecSel.sid); learnSheet(lecSel.sid) },
-  'learn-go': () => { closeSheet(); startLearn(lecSel.sid, new Set(lecSel.sel)) },
+  'learn-go': () => { closeSheet(); startLearn(lecSel.sid, lecturesOf(lecSel.sid).length ? new Set(lecSel.sel) : null, new Set(lecSel.types)) },
+  'ltype-toggle': el => { const t = el.dataset.t; if (lecSel.types.has(t)) lecSel.types.delete(t); else lecSel.types.add(t); learnSheet(lecSel.sid) },
   'end-learn': () => go({name:'subject', id:state.session.sid}),
   'flip': el => {
     const cur = state.session.cur; cur.flipped = !cur.flipped; cur.ever = true;
