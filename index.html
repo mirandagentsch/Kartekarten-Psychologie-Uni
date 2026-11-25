@@ -329,6 +329,30 @@ input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var
 .tile-bar{position:relative;display:block;height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:8px}
 .tile-bar i{display:block;height:100%;background:var(--good);border-radius:99px}
 
+/* Vorlesungen */
+.sh-btns{display:flex;align-items:center;gap:8px;flex:none}
+.section-h{gap:10px}.section-h h2{min-width:0}
+.sh-sub{font-weight:600;color:var(--muted);font-size:17px}
+.lecs{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,160px),1fr));gap:10px;margin-bottom:28px}
+.lec{display:grid;gap:4px;text-align:left;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);min-height:84px;align-content:start}
+.lec.on{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.lec-all{background:var(--surface2)}
+.lec-name{font-family:var(--round);font-weight:700;font-size:16px;line-height:1.2;overflow-wrap:anywhere}
+.lec-meta{color:var(--muted);font-size:13px}
+.lec .tile-bar{margin-top:4px}
+.tag.t-lec{background:var(--accent-soft);color:var(--accent);border-color:transparent;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.lec-edit{display:grid;gap:8px}
+.lec-erow{display:flex;gap:4px;align-items:center}
+.lec-erow input{flex:1}
+.crow.picking{cursor:pointer;padding-left:12px}
+.crow.picked{border-color:var(--accent);background:var(--accent-soft)}
+.pick-box{width:24px;height:24px;border-radius:7px;border:2px solid var(--muted);flex:none;display:grid;place-items:center}
+.crow.picked .pick-box{background:var(--accent);border-color:var(--accent)}
+.crow.picked .pick-box::after{content:"";width:9px;height:5px;border:2.5px solid var(--accent-ink);border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
+.selbar{position:sticky;bottom:calc(var(--sb) + 12px);margin-top:16px;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;border-radius:16px;background:var(--surface);box-shadow:var(--shadow-lg);border:1px solid var(--line);z-index:5}
+.selbar span{flex:1}
+@media (max-width:520px){.sh-btns .btn{padding:0 12px}}
+
 /* Textformatierung */
 .c-rot{color:var(--c-rot)}.c-orange{color:var(--c-orange)}.c-gruen{color:var(--c-gruen)}.c-blau{color:var(--c-blau)}.c-violett{color:var(--c-violett)}
 .fmt-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px;background:var(--surface2);border:1px solid var(--line);border-radius:12px}
@@ -666,6 +690,7 @@ function ask({title, text, ok='OK', danger=false}){
   });
 }
 function go(view){
+  if (view.name === 'subject' && view.lec === undefined && state.lastSubj && state.lastSubj.id === view.id) view.lec = state.lastSubj.lec;
   state.view = view; state.err = '';
   if (state.pendingReload && ['home','subject','stats'].includes(view.name)) { state.pendingReload = false; load().then(() => { render(); window.scrollTo(0, 0) }); return }
   render(); window.scrollTo(0, 0);
@@ -723,9 +748,16 @@ function viewHome(){
 
 function viewSubject(){
   const s = subj(state.view.id); if (!s) return go({name:'home'});
+  let f = state.view.lec || 'all';
+  if (f !== 'all' && f !== 'none' && !lecturesOf(s.id).some(L => L.id === f)) f = state.view.lec = 'all';
   const cs = cardsOf(s.id), c = safeColor(s.color);
+  const shown = cs.filter(x => inFilter(x, f)), shownL = lessonsOf(s.id).filter(x => inFilter(x, f));
+  const fName = f === 'all' ? '' : f === 'none' ? 'Ohne Vorlesung' : (lecturesOf(s.id).find(L => L.id === f) || {}).name || '';
+  if (!state.sel || state.sel.sid !== s.id) state.sel = {on:false, ids:new Set(), sid:s.id};
+  state.lastSubj = {id:s.id, lec:f};
+  const sel = state.sel;
   barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="home">${I.back}Fächer</button><div class="bar-title"></div></div>`;
-  const byType = TYPES.map(t => [t, cs.filter(x => x.type === t).length]).filter(x => x[1]).map(([t, n]) => `${n} ${TYPE_NAMES[t]}`).join(' · ');
+  const byType = TYPES.map(t => [t, cs.filter(x => x.type === t).length]).filter(x => x[1]).map(([t, n]) => `${n} ${t === 'basic' && n !== 1 ? 'Karteikarten' : TYPE_NAMES[t]}`).join(' · ');
   mainEl.innerHTML = `<section class="hero" style="--c:${c}">
       <div class="hero-top"><span class="dot"></span>Fach</div>
       <h1>${esc(s.name)}</h1>
@@ -735,29 +767,151 @@ function viewSubject(){
         <button class="btn" data-action="exam-setup" ${cs.length ? '' : 'disabled'}>Prüfung starten</button>
         <button class="btn" data-action="new-card">${I.plus}Neue Karte</button>
       </div>${progressBlock(s)}</section>
-    <div class="section-h"><h2>Lektionen</h2><button class="btn" data-action="lesson-new">${I.plus}Neue Lektion</button></div>
-    ${lessonsOf(s.id).length ? `<ul class="clist" style="margin-bottom:28px">${lessonsOf(s.id).map(lessonRow).join('')}</ul>`
-      : `<p class="muted small" style="margin:0 0 28px">Lektionen verbinden Theorie mit Fragen: Text lesen, Frage lösen, weiterlesen. Schreib selbst eine oder importiere eine von Claude.</p>`}
-    <div class="section-h"><h2>Karten</h2><span>${cs.length}</span></div>
-    ${cs.length ? `<ul class="clist">${cs.map(cardRow).join('')}</ul>`
-      : `<div class="empty" style="padding:24px 12px"><p>Hier erscheinen deine Karten. Tippe auf «Neue Karte», um die erste anzulegen.</p></div>`}`;
+    ${lecturesSection(s, f, cs)}
+    <div class="section-h"><h2>Lektionen${fName ? ` <span class="sh-sub">· ${esc(fName)}</span>` : ''}</h2><button class="btn" data-action="lesson-new">${I.plus}Neue Lektion</button></div>
+    ${shownL.length ? `<ul class="clist" style="margin-bottom:28px">${shownL.map(l => lessonRow(l, f)).join('')}</ul>`
+      : `<p class="muted small" style="margin:0 0 28px">${lessonsOf(s.id).length ? 'In dieser Auswahl gibt es keine Lektionen.' : 'Lektionen verbinden Theorie mit Fragen: Text lesen, Frage lösen, weiterlesen. Schreib selbst eine oder importiere eine von Claude.'}</p>`}
+    <div class="section-h"><h2>Karten${fName ? ` <span class="sh-sub">· ${esc(fName)}</span>` : ''}</h2>
+      <div class="sh-btns">${shown.length ? (sel.on ? `<button class="btn" data-action="sel-all">${shown.every(x => sel.ids.has(x.id)) ? 'Keine' : 'Alle'}</button>` : `<button class="btn" data-action="sel-start">Auswählen</button>`) : ''}<span class="muted small">${shown.length}</span></div></div>
+    ${shown.length ? `<ul class="clist">${shown.map(x => cardRow(x, f, sel)).join('')}</ul>`
+      : `<div class="empty" style="padding:24px 12px"><p>${cs.length ? 'In dieser Auswahl gibt es keine Karten.' : 'Hier erscheinen deine Karten. Tippe auf «Neue Karte», um die erste anzulegen.'}</p></div>`}
+    ${sel.on ? `<div class="selbar"><span><b>${sel.ids.size}</b> ausgewählt</span><button class="btn" data-action="sel-cancel">Abbrechen</button>
+      <button class="btn primary" data-action="sel-move" ${sel.ids.size ? '' : 'disabled'}>Verschieben</button></div>` : ''}`;
+}
+/* ---------- Vorlesungen ---------- */
+const normLectures = l => Array.isArray(l) ? l.filter(x => x && x.id).map(x => ({id:String(x.id), name:String(x.name || 'Vorlesung').slice(0, 80), created:+x.created || 0})) : [];
+const lecturesOf = sid => { const s = subj(sid); return s && Array.isArray(s.lectures) ? s.lectures : [] };
+const lecOf = (x, sid) => x && x.lectureId ? lecturesOf(sid || x.subjectId).find(L => L.id === x.lectureId) || null : null;
+const inFilter = (x, f) => f === 'all' ? true : f === 'none' ? !lecOf(x) : x.lectureId === f;
+const lecKey = x => lecOf(x) ? x.lectureId : 'none';
+function mergeLectureLists(a = [], b = [], del = []){
+  const out = [], seen = new Set();
+  for (const L of [...normLectures(b), ...normLectures(a)]) { if (seen.has(L.id) || del.includes(L.id)) continue; seen.add(L.id); out.push(L) }
+  return out;
+}
+function mergeLecturesInto(target, source){
+  // Vorlesungen aus «source» in «target» übernehmen, gleiche Namen zusammenlegen; liefert Zuordnung alt -> neu
+  const map = {}, norm = x => String(x || '').trim().toLowerCase();
+  target.lectures = normLectures(target.lectures);
+  for (const L of normLectures(source && source.lectures)) {
+    const same = target.lectures.find(x => x.id === L.id) || target.lectures.find(x => norm(x.name) === norm(L.name));
+    if (same) map[L.id] = same.id; else { target.lectures.push(L); map[L.id] = L.id }
+  }
+  return map;
+}
+let lecSel = null;
+function lectureSelect(id, bindAttr, sid, value){
+  const lecs = lecturesOf(sid); if (!lecs.length) return '';
+  return `<div class="field"><label class="lbl" for="${id}">Vorlesung</label>
+    <select id="${id}" ${bindAttr}="lectureId"><option value="">Ohne Vorlesung</option>${lecs.map(L => `<option value="${esc(L.id)}" ${value === L.id ? 'selected' : ''}>${esc(L.name)}</option>`).join('')}</select></div>`;
+}
+function lecturesSection(s, f, all){
+  const lecs = lecturesOf(s.id);
+  if (!lecs.length) return `<div class="section-h"><h2>Vorlesungen</h2><button class="btn" data-action="lec-add">${I.plus}Vorlesung</button></div>
+    <p class="muted small" style="margin:0 0 28px">Teile deine Karten nach Vorlesungen auf. Dann lernst du gezielt eine Vorlesung oder mischst vor der Prüfung alles.</p>`;
+  const none = all.filter(c => !lecOf(c));
+  const tiles = [{id:'all', name:'Alle Vorlesungen', cards:all}, ...lecs.map(L => ({id:L.id, name:L.name, cards:all.filter(c => c.lectureId === L.id)})), ...(none.length ? [{id:'none', name:'Ohne Vorlesung', cards:none}] : [])];
+  return `<div class="section-h"><h2>Vorlesungen</h2><div class="sh-btns"><button class="btn" data-action="lec-manage" aria-label="Vorlesungen bearbeiten" title="Bearbeiten">${I.edit}</button><button class="btn" data-action="lec-add">${I.plus}Vorlesung</button></div></div>
+    <div class="lecs">${tiles.map(t => { const n = t.cards.length, p = pct(t.cards.filter(c => c.last === 'known').length, n);
+      return `<button class="lec ${f === t.id ? 'on' : ''} ${t.id === 'all' ? 'lec-all' : ''}" data-action="lec-filter" data-l="${esc(t.id)}" aria-pressed="${f === t.id}">
+        <span class="lec-name">${esc(t.name)}</span><span class="lec-meta">${n} ${n === 1 ? 'Karte' : 'Karten'}${n ? ` · ${p} % sicher` : ''}</span>
+        <span class="tile-bar"><i style="width:${p}%"></i></span></button>` }).join('')}</div>`;
+}
+function lecAddSheet(after){
+  const sid = state.view.id, n = lecturesOf(sid).length;
+  openSheet(`<form class="form" data-form="lec-add" data-after="${after || ''}" style="gap:14px" novalidate><h2>Neue Vorlesung</h2>
+    <div class="field"><label class="lbl" for="lec-name">Name</label><input type="text" id="lec-name" maxlength="80" value="VL ${n + 1}" autocomplete="off">
+    <span class="sub" style="margin-top:2px">Zum Beispiel «VL 3 – Gedächtnis» oder «Woche 5».</span></div>
+    <div class="sheet-actions"><button type="button" class="btn" data-action="sheet-no">Abbrechen</button><button type="submit" class="btn primary">Anlegen</button></div></form>`);
+  const i = $('#lec-name'); if (i && !isIOS) { i.focus(); i.select() }
+}
+async function addLecture(sid, name){
+  const s = subj(sid), n = (s.lectures || []).length;
+  const L = {id:uid(), name:(name || '').trim().slice(0, 80) || `VL ${n + 1}`, created:Date.now()};
+  s.lectures = [...normLectures(s.lectures), L];
+  await put('subjects', s);
+  return L;
+}
+function manageSheet(){
+  const sid = state.view.id, lecs = lecturesOf(sid);
+  openSheet(`<h2>Vorlesungen bearbeiten</h2>
+    <p class="small">Namen direkt ändern, Reihenfolge mit den Pfeilen. Beim Löschen bleiben Karten und Lektionen erhalten und kommen zu «Ohne Vorlesung».</p>
+    ${lecs.length ? `<div class="lec-edit">${lecs.map((L, i) => `<div class="lec-erow">
+      <input type="text" value="${esc(L.name)}" data-lec-rename="${esc(L.id)}" maxlength="80" aria-label="Name der Vorlesung">
+      <button class="icon-btn" data-action="lec-move" data-i="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="Nach oben">${I.up}</button>
+      <button class="icon-btn" data-action="lec-move" data-i="${i}" data-d="1" ${i < lecs.length - 1 ? '' : 'disabled'} aria-label="Nach unten">${I.down}</button>
+      <button class="icon-btn danger" data-action="lec-del" data-l="${esc(L.id)}" aria-label="Vorlesung löschen">${I.trash}</button></div>`).join('')}</div>` : '<p>Noch keine Vorlesungen.</p>'}
+    <div class="sheet-actions"><button class="btn" data-action="lec-add-from-manage">${I.plus}Vorlesung</button><button class="btn primary" data-action="sheet-no">Fertig</button></div>`);
+}
+async function deleteLecture(id){
+  const sid = state.view.id, s = subj(sid), L = (s.lectures || []).find(x => x.id === id); if (!L) return;
+  const cs = state.cards.filter(c => c.subjectId === sid && c.lectureId === id), lsn = state.lessons.filter(l => l.subjectId === sid && l.lectureId === id);
+  if (!(await ask({title:`«${L.name}» löschen?`, text:`${cs.length} ${cs.length === 1 ? 'Karte' : 'Karten'}${lsn.length ? ` und ${lsn.length} ${lsn.length === 1 ? 'Lektion' : 'Lektionen'}` : ''} bleiben erhalten und kommen zu «Ohne Vorlesung».`, ok:'Löschen', danger:true}))) { manageSheet(); return }
+  cs.forEach(c => delete c.lectureId); lsn.forEach(l => delete l.lectureId);
+  s.lectures = s.lectures.filter(x => x.id !== id);
+  s.lecturesDeleted = [...(s.lecturesDeleted || []), id].slice(-200);
+  await putMany('cards', cs); await putMany('lessons', lsn); await put('subjects', s);
+  if (state.view.lec === id) state.view.lec = 'all';
+  render(); manageSheet();
+}
+function moveSheet(){
+  const sid = state.view.id, lecs = lecturesOf(sid), n = state.sel.ids.size;
+  openSheet(`<h2>${n} ${n === 1 ? 'Karte' : 'Karten'} verschieben</h2><p>In welche Vorlesung?</p>
+    <div class="setup-group">${lecs.map(L => `<button type="button" class="check-row" data-action="sel-to" data-l="${esc(L.id)}">${esc(L.name)}</button>`).join('')}
+      <button type="button" class="check-row" data-action="sel-to" data-l="">Ohne Vorlesung</button>
+      <button type="button" class="check-row" data-action="sel-to-new" style="color:var(--accent)">${I.plus} Neue Vorlesung anlegen</button></div>
+    <div class="sheet-actions"><button class="btn" data-action="sheet-no">Abbrechen</button></div>`);
+}
+async function moveSelected(lecId){
+  const list = state.cards.filter(c => state.sel.ids.has(c.id));
+  list.forEach(c => { if (lecId) c.lectureId = lecId; else delete c.lectureId });
+  try {
+    await putMany('cards', list);
+    const L = lecId ? lecturesOf(state.view.id).find(x => x.id === lecId) : null;
+    toast(`${list.length} ${list.length === 1 ? 'Karte' : 'Karten'} ${L ? `in «${L.name}»` : 'zu «Ohne Vorlesung»'} verschoben`);
+    state.sel = {on:false, ids:new Set()}; closeSheet(); render();
+  } catch { toast('Verschieben hat nicht geklappt') }
+}
+function learnSheet(sid){
+  const lecs = lecturesOf(sid), all = cardsOf(sid);
+  if (!lecs.length) return startLearn(sid);
+  const f = state.view.lec && state.view.lec !== 'all' ? state.view.lec : null;
+  const keys = [...lecs.map(L => L.id), ...(all.some(c => !lecOf(c)) ? ['none'] : [])];
+  if (!lecSel || lecSel.sid !== sid || lecSel.mode !== 'learn') lecSel = {sid, mode:'learn', sel:new Set(f ? [f] : keys)};
+  const n = all.filter(c => lecSel.sel.has(lecKey(c))).length;
+  openSheet(`<h2>Was möchtest du lernen?</h2><p>Wähle eine oder mehrere Vorlesungen.</p>
+    ${lecPicker(sid, lecSel.sel, 'lsel-toggle')}
+    <div class="sheet-actions"><button class="btn" data-action="sheet-no">Abbrechen</button><button class="btn primary" data-action="learn-go" ${n ? '' : 'disabled'}>Los (${n} ${n === 1 ? 'Karte' : 'Karten'})</button></div>`);
+}
+function lecPicker(sid, sel, action){
+  const all = cardsOf(sid), lecs = lecturesOf(sid), none = all.filter(c => !lecOf(c)).length;
+  const keys = [...lecs.map(L => L.id), ...(none ? ['none'] : [])], allOn = keys.every(k => sel.has(k));
+  return `<div class="setup-group"><div class="prog-top"><span class="lbl">Vorlesungen</span><button type="button" class="link-btn" data-action="${action}" data-l="*" style="padding:0">${allOn ? 'Keine' : 'Alle'}</button></div>
+    ${lecs.map(L => `<button type="button" class="check-row ${sel.has(L.id) ? 'on' : ''}" data-action="${action}" data-l="${esc(L.id)}"><span class="box"></span>${esc(L.name)}<span class="n">${all.filter(c => c.lectureId === L.id).length}</span></button>`).join('')}
+    ${none ? `<button type="button" class="check-row ${sel.has('none') ? 'on' : ''}" data-action="${action}" data-l="none"><span class="box"></span>Ohne Vorlesung<span class="n">${none}</span></button>` : ''}</div>`;
+}
+function toggleLecSel(sel, key, sid){
+  const all = cardsOf(sid), keys = [...lecturesOf(sid).map(L => L.id), ...(all.some(c => !lecOf(c)) ? ['none'] : [])];
+  if (key === '*') { if (keys.every(k => sel.has(k))) sel.clear(); else keys.forEach(k => sel.add(k)) }
+  else if (sel.has(key)) sel.delete(key); else sel.add(key);
 }
 const mediaIds = c => [...(c.qMedia||[]), ...(c.aMedia||[]), ...(c.options||[]).flatMap(o => o.media || [])].map(m => m.id);
 function countMedia(c){ return (c.qMedia||[]).length + (c.aMedia||[]).length + (c.options||[]).reduce((n,o) => n + (o.media||[]).length, 0) }
-function cardRow(c){
-  const m = countMedia(c);
-  return `<li class="crow"><div class="crow-main">
+function cardRow(c, f, sel){
+  const m = countMedia(c), L = lecOf(c), picking = sel && sel.on, on = picking && sel.ids.has(c.id);
+  return `<li class="crow ${picking ? 'picking' : ''} ${on ? 'picked' : ''}" ${picking ? `data-action="sel-toggle" data-id="${esc(c.id)}" role="checkbox" aria-checked="${on}" tabindex="0"` : ''}>
+    ${picking ? '<span class="pick-box"></span>' : ''}<div class="crow-main">
     <div class="crow-tags"><span class="tag t-${esc(c.type)}">${esc(TYPE_NAMES[c.type] || '')}</span><span class="tag">${c.lang === 'en' ? 'EN' : 'DE'}</span>
-    ${m ? `<span class="tag">${I.clip}${m}</span>` : ''}</div>
+    ${L && f === 'all' ? `<span class="tag t-lec">${esc(L.name)}</span>` : ''}${m ? `<span class="tag">${I.clip}${m}</span>` : ''}</div>
     <div class="crow-q">${fmt(c.question) || '<span class="muted">(nur Anhang)</span>'}</div>
-    ${c.type === 'basic' ? `<button class="link-btn" data-action="convert" data-id="${esc(c.id)}">${I.flip}In Choice-Frage umwandeln</button>` : ''}</div>
-    <button class="icon-btn danger" data-action="del-card" data-id="${esc(c.id)}" aria-label="Karte löschen">${I.trash}</button></li>`;
+    ${c.type === 'basic' && !picking ? `<button class="link-btn" data-action="convert" data-id="${esc(c.id)}">${I.flip}In Choice-Frage umwandeln</button>` : ''}</div>
+    ${picking ? '' : `<button class="icon-btn danger" data-action="del-card" data-id="${esc(c.id)}" aria-label="Karte löschen">${I.trash}</button>`}</li>`;
 }
 
 /* ---------- Formular für neue Karten ---------- */
 const blankOpt = () => ({text:'', correct:false, explanation:'', media:[]});
-function newDraft(subjectId, type, lang){
-  return {subjectId, type: type || 'basic', lang: lang || ls.get('last-lang') || 'de', question:'', qMedia:[], answer:'', aMedia:[],
+function newDraft(subjectId, type, lang, lectureId){
+  return {subjectId, lectureId: lectureId || '', type: type || 'basic', lang: lang || ls.get('last-lang') || 'de', question:'', qMedia:[], answer:'', aMedia:[],
     options: type === 'kprim' ? [0,1,2,3].map(() => ({...blankOpt(), correct:null})) : [0,1,2,3].map(blankOpt)};
 }
 const previews = new WeakMap();
@@ -780,6 +934,7 @@ function viewEdit(){
     ${d.convertFrom ? `<p class="info">Die Antwort deiner Karteikarte steht jetzt als <b>${d.type === 'kprim' ? 'richtige Aussage 1' : 'richtige Antwort A'}</b>. Ergänze ${d.type === 'kprim' ? 'die weiteren Aussagen' : 'falsche Antworten'} und Erklärungen. Beim Speichern ersetzt die neue Karte deine Karteikarte.</p>` : ''}
     <div class="field"><label class="lbl" for="f-s">Fach</label>
       <select id="f-s" data-bind="subjectId">${state.subjects.map(x => `<option value="${esc(x.id)}" ${x.id === d.subjectId ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>
+    ${lectureSelect('f-l', 'data-bind', d.subjectId, d.lectureId)}
     <div class="field"><span class="lbl">Kartentyp</span>
       <div class="seg">${TYPES.filter(t => !d.convertFrom || t !== 'basic').map(t => `<button type="button" class="${d.type === t ? 'on' : ''}" data-action="set-type" data-t="${t}">${TYPE_NAMES[t]}</button>`).join('')}</div></div>
     <div class="field"><span class="lbl">Sprache der Karte</span>
@@ -860,6 +1015,8 @@ async function saveDraft(again){
     const orig = d.convertFrom ? cardById(d.convertFrom) : null;
     const c = {id: orig ? orig.id : uid(), subjectId:d.subjectId, type:d.type, lang:d.lang, question:d.question.trim(), qMedia: await storeFiles(d.qMedia),
       created: orig ? orig.created : Date.now(), stats: orig && orig.stats ? orig.stats : {known:0, again:0}};
+    if (d.lectureId && lecturesOf(d.subjectId).some(L => L.id === d.lectureId)) c.lectureId = d.lectureId;
+    if (orig && orig.last) { c.last = orig.last; c.lastAt = orig.lastAt }
     if (d.type === 'basic') { c.answer = d.answer.trim(); c.aMedia = await storeFiles(d.aMedia) }
     else { c.options = []; for (const o of d.options) c.options.push({text:o.text.trim(), correct:o.correct === true, explanation:o.explanation.trim(), media: await storeFiles(o.media)}) }
     await put('cards', c);
@@ -870,8 +1027,8 @@ async function saveDraft(again){
       toast('Karte umgewandelt');
     } else { state.cards.push(c); toast('Karte gespeichert') }
     ls.set('last-lang', d.lang);
-    if (again) { state.draft = newDraft(d.subjectId, d.type, d.lang); state.err = ''; render(); window.scrollTo(0, 0) }
-    else { state.draft = null; go({name:'subject', id:d.subjectId}) }
+    if (again) { state.draft = newDraft(d.subjectId, d.type, d.lang, d.lectureId); state.err = ''; render(); window.scrollTo(0, 0) }
+    else { state.draft = null; go({name:'subject', id:d.subjectId, lec: state.view.back || (d.lectureId || 'all')}) }
   } catch (err) {
     for (const id of created) await del('media', id).catch(() => {});
     state.err = (err && err.name === 'QuotaExceededError') ? 'Der Speicher auf diesem Gerät ist voll. Entferne grosse Videos oder lösche alte Karten.' : 'Speichern hat nicht geklappt. Bitte versuche es noch einmal.';
@@ -880,10 +1037,10 @@ async function saveDraft(again){
 }
 
 /* ---------- Lernmodus ---------- */
-function startLearn(sid){
-  const ids = cardsOf(sid).map(c => c.id);
+function startLearn(sid, sel){
+  const ids = cardsOf(sid).filter(c => !sel || sel.has(lecKey(c))).map(c => c.id);
   if (!ids.length) return;
-  state.session = {sid, queue:ids, total:ids.length, done:0, known:0, again:0, pts:0, maxPts:0, seen:new Set(), cur:null};
+  state.session = {sid, sel: sel ? new Set(sel) : null, queue:ids, total:ids.length, done:0, known:0, again:0, pts:0, maxPts:0, seen:new Set(), cur:null};
   nextCard();
 }
 function nextCard(){
@@ -1012,13 +1169,20 @@ const shuffle = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i-
 const pct = (p, m) => m ? Math.round(p / m * 100) : 0;
 let setup = null;
 function examSetupSheet(sid){
-  const cs = cardsOf(sid), avail = TYPES.filter(t => cs.some(c => c.type === t));
-  if (!setup || setup.sid !== sid) setup = {sid, types:new Set(avail), count:20};
+  const lecs = lecturesOf(sid), allC = cardsOf(sid);
+  const keys = [...lecs.map(L => L.id), ...(allC.some(c => !lecOf(c)) ? ['none'] : [])];
+  if (!setup || setup.sid !== sid) {
+    const f = state.view.name === 'subject' && state.view.lec && state.view.lec !== 'all' ? state.view.lec : null;
+    setup = {sid, types:new Set(TYPES), count:20, lecs:new Set(f ? [f] : keys)};
+  }
+  if (!setup.lecs) setup.lecs = new Set(keys);
+  const cs = lecs.length ? allC.filter(c => setup.lecs.has(lecKey(c))) : allC, avail = TYPES.filter(t => allC.some(c => c.type === t));
   const n = cs.filter(c => setup.types.has(c.type)).length;
   const counts = [10, 20, 30].filter(x => x < n);
   if (setup.count !== 0 && !counts.includes(setup.count)) setup.count = 0;
   openSheet(`<h2>Prüfung starten</h2>
     <p>Die Fragen kommen in zufälliger Reihenfolge, ohne Auflösung. Am Ende siehst du Punktzahl, Lösungen und Erklärungen.</p>
+    ${lecs.length ? lecPicker(sid, setup.lecs, 'esel-toggle') : ''}
     <div class="setup-group"><span class="lbl">Fragetypen</span>
       ${avail.map(t => `<button type="button" class="check-row ${setup.types.has(t) ? 'on' : ''}" data-action="setup-type" data-t="${t}"><span class="box"></span>${TYPE_NAMES[t]}${t === 'basic' ? ' (Selbstbewertung)' : ''}<span class="n">${cs.filter(c => c.type === t).length}</span></button>`).join('')}</div>
     <div class="setup-group"><span class="lbl">Anzahl Fragen</span>
@@ -1259,7 +1423,21 @@ async function applyRemote(row){
   }
   const n = STORE_OF[row.kind]; if (!n) return false;
   const local = await get(n, row.id), ru = +row.updated_at || 0;
-  if (local && (local._u || 0) >= ru) return false;
+  if (local && (local._u || 0) >= ru) {
+    if (row.kind !== 'subject' || row.deleted || !row.data) return false;
+    const d = row.data, delL = [...new Set([...(local.lecturesDeleted || []), ...(Array.isArray(d.lecturesDeleted) ? d.lecturesDeleted.map(String) : [])])].slice(-200);
+    const lec = mergeLectureLists(d.lectures, local.lectures, delL).sort((a, b) => {
+      const ia = (local.lectures || []).findIndex(x => x.id === a.id), ib = (local.lectures || []).findIndex(x => x.id === b.id);
+      return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib);
+    });
+    const rAt = Math.max(+local.examsResetAt || 0, +d.examsResetAt || 0);
+    const rem = Array.isArray(d.exams) ? d.exams.filter(x => x && +x.max > 0 && +x.at > rAt).map(x => ({at:+x.at, pts:+x.pts || 0, max:+x.max})) : [];
+    const ex = mergeExams((local.exams || []).filter(x => x.at > rAt), rem);
+    const same = JSON.stringify(lec) === JSON.stringify(normLectures(local.lectures)) && ex.length === (local.exams || []).length && delL.length === (local.lecturesDeleted || []).length;
+    if (same) return false;
+    local.lectures = lec; local.lecturesDeleted = delL; local.exams = ex; local.examsResetAt = rAt; local._d = 1;
+    await put(n, local, true); return true;
+  }
   const tomb = state.tombs.find(t => t.kind === row.kind && t.id === row.id);
   if (tomb && tomb.at >= ru) return false;
   if (row.deleted) {
@@ -1274,12 +1452,15 @@ async function applyRemote(row){
   else {
     const rAt = Math.max(+(local && local.examsResetAt) || 0, +d.examsResetAt || 0);
     const rem = Array.isArray(d.exams) ? d.exams.filter(x => x && +x.max > 0).map(x => ({at:+x.at || 0, pts:+x.pts || 0, max:+x.max})) : [];
+    const delL = [...new Set([...(Array.isArray(d.lecturesDeleted) ? d.lecturesDeleted.map(String) : []), ...((local && local.lecturesDeleted) || [])])].slice(-200);
     v = {id:String(row.id), name:String(d.name || 'Fach'), color:safeColor(d.color), created:+d.created || Date.now(), examsResetAt:rAt,
-      exams:mergeExams((local && local.exams || []).filter(x => x.at > rAt), rem.filter(x => x.at > rAt))};
+      exams:mergeExams((local && local.exams || []).filter(x => x.at > rAt), rem.filter(x => x.at > rAt)),
+      lectures:mergeLectureLists(local && local.lectures, d.lectures, delL), lecturesDeleted:delL};
   }
   if (!v) return false;
   v._u = ru; v._d = 0;
-  if (row.kind === 'subject' && local && v.exams.length > (Array.isArray(d.exams) ? d.exams.filter(x => x && x.at > v.examsResetAt).length : 0)) { v._d = 1; v._u = Math.max(ru, local._u || 0) + 1 }
+  if (row.kind === 'subject' && local && (v.exams.length > (Array.isArray(d.exams) ? d.exams.filter(x => x && x.at > v.examsResetAt).length : 0)
+      || v.lectures.length > normLectures(d.lectures).filter(L => !v.lecturesDeleted.includes(L.id)).length || v.lecturesDeleted.length > (Array.isArray(d.lecturesDeleted) ? d.lecturesDeleted.length : 0))) { v._d = 1; v._u = Math.max(ru, local._u || 0) + 1 }
   await put(n, v, true);
   return true;
 }
@@ -1290,7 +1471,9 @@ async function mergeSameName(){
   for (const s of mine) {
     const t = theirs.find(x => norm(x.name) === norm(s.name)); if (!t) continue;
     const cs = (await all('cards')).filter(c => c.subjectId === s.id), lsn = (await all('lessons')).filter(l => l.subjectId === s.id);
-    cs.forEach(c => c.subjectId = t.id); lsn.forEach(l => l.subjectId = t.id);
+    const lm = mergeLecturesInto(t, s);
+    cs.forEach(c => { c.subjectId = t.id; if (c.lectureId && lm[c.lectureId]) c.lectureId = lm[c.lectureId] });
+    lsn.forEach(l => { l.subjectId = t.id; if (l.lectureId && lm[l.lectureId]) l.lectureId = lm[l.lectureId] });
     await putMany('cards', cs); await putMany('lessons', lsn);
     t.exams = mergeExams(t.exams, s.exams); await put('subjects', t);
     await del('subjects', s.id, true); moved = true;
@@ -1543,10 +1726,10 @@ function md(text){
   flush(); if (list) out += '</ul>';
   return out;
 }
-function lessonRow(l){
-  const nq = l.blocks.filter(b => b.kind === 'question').length, nt = l.blocks.length - nq, pr = l.progress;
+function lessonRow(l, f){
+  const L = lecOf(l), nq = l.blocks.filter(b => b.kind === 'question').length, nt = l.blocks.length - nq, pr = l.progress;
   return `<li class="crow lrow"><button class="lrow-main" data-action="lesson-open" data-id="${esc(l.id)}">
-      <div class="crow-tags"><span class="tag t-lesson">Lektion</span><span class="tag">${l.lang === 'en' ? 'EN' : 'DE'}</span>
+      <div class="crow-tags"><span class="tag t-lesson">Lektion</span><span class="tag">${l.lang === 'en' ? 'EN' : 'DE'}</span>${L && f === 'all' ? `<span class="tag t-lec">${esc(L.name)}</span>` : ''}
       ${pr && pr.done ? `<span class="tag t-done">abgeschlossen${pr.max ? ` · ${num(Math.round(pr.pts * 10) / 10, 'de')}/${pr.max}` : ''}</span>` : ''}</div>
       <div class="crow-q"><b>${esc(l.title)}</b></div><div class="small muted">${nt} ${nt === 1 ? 'Textabschnitt' : 'Textabschnitte'} · ${nq} ${nq === 1 ? 'Frage' : 'Fragen'}</div></button>
     <button class="icon-btn" data-action="lesson-edit" data-id="${esc(l.id)}" aria-label="Lektion bearbeiten">${I.edit}</button>
@@ -1612,9 +1795,9 @@ function lessonMedia(key){
   const d = state.ldraft, m = key.match(/^([tqo])(\d+)(?:_(\d+))?$/), b = d.blocks[+m[2]];
   return m[1] === 't' ? b.media : m[1] === 'q' ? b.qMedia : b.options[+m[3]].media;
 }
-function newLessonDraft(sid){ return {subjectId:sid, title:'', lang:ls.get('last-lang') || 'de', blocks:[blankTextBlock(), blankQBlock()], editId:null} }
+function newLessonDraft(sid, lec){ return {subjectId:sid, lectureId:lec || '', title:'', lang:ls.get('last-lang') || 'de', blocks:[blankTextBlock(), blankQBlock()], editId:null} }
 function lessonToDraft(l){
-  return {subjectId:l.subjectId, title:l.title, lang:l.lang, editId:l.id,
+  return {subjectId:l.subjectId, lectureId:l.lectureId || '', title:l.title, lang:l.lang, editId:l.id,
     blocks:l.blocks.map(b => b.kind === 'text' ? {...b, media:b.media.slice()} : {...b, qMedia:b.qMedia.slice(), options:b.options.map(o => ({...o, media:o.media.slice()}))})};
 }
 function viewLessonEdit(){
@@ -1624,6 +1807,7 @@ function viewLessonEdit(){
   mainEl.innerHTML = `<form class="form" style="--c:${safeColor(s && s.color)}" novalidate>
     <div class="field"><label class="lbl" for="l-t">Titel der Lektion</label>
       <input type="text" id="l-t" data-lbind="title" value="${esc(d.title)}" placeholder="z. B. Aufbau des Neurons"></div>
+    ${lectureSelect('l-l', 'data-lbind', d.subjectId, d.lectureId)}
     <div class="field"><span class="lbl">Sprache</span>
       <div class="seg two"><button type="button" class="${d.lang === 'de' ? 'on' : ''}" data-action="lset-lang" data-l="de">Deutsch</button>
       <button type="button" class="${d.lang === 'en' ? 'on' : ''}" data-action="lset-lang" data-l="en">English</button></div></div>
@@ -1681,13 +1865,14 @@ async function saveLesson(){
         blocks.push({id:b.id, kind:'question', type:b.type, question:b.question.trim(), qMedia: await storeMedia(b.qMedia, created), options}) }
     }
     const l = {id: orig ? orig.id : uid(), subjectId:d.subjectId, title:d.title.trim(), lang:d.lang, created: orig ? orig.created : Date.now(), blocks, progress: orig ? orig.progress : null};
+    if (d.lectureId && lecturesOf(d.subjectId).some(L => L.id === d.lectureId)) l.lectureId = d.lectureId;
     await put('lessons', l);
     if (orig) {
       const keep = new Set(lessonMediaIds(l));
       for (const m of lessonMediaIds(orig)) if (!keep.has(m)) await del('media', m).catch(() => {});
       state.lessons = state.lessons.map(x => x.id === l.id ? l : x);
     } else state.lessons.push(l);
-    ls.set('last-lang', d.lang); state.ldraft = null; toast('Lektion gespeichert'); go({name:'subject', id:l.subjectId});
+    ls.set('last-lang', d.lang); state.ldraft = null; toast('Lektion gespeichert'); go({name:'subject', id:l.subjectId, lec:state.view.back || 'all'});
   } catch (err) {
     for (const id of created) await del('media', id).catch(() => {});
     state.err = err && err.name === 'QuotaExceededError' ? 'Der Speicher auf diesem Gerät ist voll.' : 'Speichern hat nicht geklappt. Bitte versuche es noch einmal.'; render();
@@ -1710,7 +1895,7 @@ function convertCard(id){
   const d = newDraft(c.subjectId, 'single', c.lang);
   d.question = c.question || ''; d.qMedia = (c.qMedia || []).slice();
   d.options[0] = {text:c.answer || '', correct:true, explanation:'', media:(c.aMedia || []).slice()};
-  d.convertFrom = c.id;
+  d.convertFrom = c.id; d.lectureId = c.lectureId || '';
   state.draft = d; go({name:'edit'});
 }
 
@@ -1809,7 +1994,9 @@ function normLesson(l){
   }).filter(Boolean);
   if (!blocks.length) return null;
   const pr = l.progress && typeof l.progress === 'object' ? {done:!!l.progress.done, at:+l.progress.at || 0, pts:+l.progress.pts || 0, max:+l.progress.max || 0} : null;
-  return {id:String(l.id), subjectId:String(l.subjectId), title:String(l.title || 'Lektion'), lang:l.lang === 'en' ? 'en' : 'de', created:+l.created || Date.now(), blocks, progress:pr};
+  const out = {id:String(l.id), subjectId:String(l.subjectId), title:String(l.title || 'Lektion'), lang:l.lang === 'en' ? 'en' : 'de', created:+l.created || Date.now(), blocks, progress:pr};
+  if (l.lectureId) out.lectureId = String(l.lectureId);
+  return out;
 }
 function normCard(c){
   if (!c || !c.id || !TYPES.includes(c.type)) return null;
@@ -1817,6 +2004,7 @@ function normCard(c){
   const out = {id:String(c.id), subjectId:String(c.subjectId), type:c.type, lang:c.lang === 'en' ? 'en' : 'de', question:String(c.question || ''), qMedia:med(c.qMedia),
     created:+c.created || Date.now(), stats:{known:+(c.stats && c.stats.known) || 0, again:+(c.stats && c.stats.again) || 0}};
   if (c.last === 'known' || c.last === 'again') { out.last = c.last; out.lastAt = +c.lastAt || 0 }
+  if (c.lectureId) out.lectureId = String(c.lectureId);
   if (c.type === 'basic') { out.answer = String(c.answer || ''); out.aMedia = med(c.aMedia); return out }
   if (!Array.isArray(c.options)) return null;
   out.options = c.options.map(o => ({text:String(o && o.text || ''), correct:!!(o && o.correct === true), explanation:String(o && o.explanation || ''), media:med(o && o.media)}));
@@ -1860,15 +2048,20 @@ async function importBackup(file){
     if (meta.app !== 'karteikarten' || !Array.isArray(meta.subjects) || !Array.isArray(meta.cards || [])) throw new Error('format');
     meta.cards = meta.cards || [];
     // Fächer mit gleichem Namen zusammenführen
-    const norm = x => String(x || '').trim().toLowerCase(), remap = {};
+    const norm = x => String(x || '').trim().toLowerCase(), remap = {}, lecMap = {}, touched = [];
     const newSubjects = meta.subjects.filter(s => s && s.id).filter(s => {
-      if (state.subjects.some(x => x.id === String(s.id))) return true;
-      const same = state.subjects.find(x => norm(x.name) === norm(s.name));
-      if (same) { remap[String(s.id)] = same.id; return false }
+      const exist = state.subjects.find(x => x.id === String(s.id));
+      const same = exist || state.subjects.find(x => norm(x.name) === norm(s.name));
+      if (same) {
+        const copy = JSON.parse(JSON.stringify(same)); Object.assign(lecMap, mergeLecturesInto(copy, s));
+        if (exist) { s.lectures = copy.lectures; return true }
+        remap[String(s.id)] = same.id; touched.push(copy); return false;
+      }
       return true;
     });
-    const cards = meta.cards.map(normCard).filter(Boolean).map(c => ({...c, subjectId: remap[c.subjectId] || c.subjectId}));
-    const lessons = (Array.isArray(meta.lessons) ? meta.lessons : []).map(normLesson).filter(Boolean).map(l => ({...l, subjectId: remap[l.subjectId] || l.subjectId}));
+    const fixLec = x => { if (x.lectureId && lecMap[x.lectureId]) x.lectureId = lecMap[x.lectureId]; return x };
+    const cards = meta.cards.map(normCard).filter(Boolean).map(c => fixLec({...c, subjectId: remap[c.subjectId] || c.subjectId}));
+    const lessons = (Array.isArray(meta.lessons) ? meta.lessons : []).map(normLesson).filter(Boolean).map(l => fixLec({...l, subjectId: remap[l.subjectId] || l.subjectId}));
     const into = [...new Set([...cards, ...lessons].map(c => c.subjectId))].map(id => (state.subjects.find(x => x.id === id) || newSubjects.find(x => String(x.id) === id) || {}).name).filter(Boolean);
     if (!cards.length && !lessons.length) throw new Error('empty');
     const what = [cards.length ? `${cards.length} ${cards.length === 1 ? 'Karte' : 'Karten'}` : '', lessons.length ? `${lessons.length} ${lessons.length === 1 ? 'Lektion' : 'Lektionen'}` : ''].filter(Boolean).join(' und ');
@@ -1880,8 +2073,10 @@ async function importBackup(file){
       const old = state.subjects.find(x => x.id === String(s.id));
       const merged = old ? [...(old.exams || []), ...ex.filter(x => !(old.exams || []).some(y => y.at === x.at))].sort((a, b) => a.at - b.at).slice(-10) : ex;
       const rAt = Math.max(+(old && old.examsResetAt) || 0, +s.examsResetAt || 0);
-      return {id:String(s.id), name:String(s.name || 'Fach'), color:safeColor(s.color), created:+s.created || Date.now(), examsResetAt:rAt, exams:merged.filter(x => x.at > rAt)};
+      return {id:String(s.id), name:String(s.name || 'Fach'), color:safeColor(s.color), created:+s.created || Date.now(), examsResetAt:rAt, exams:merged.filter(x => x.at > rAt),
+        lectures:normLectures(s.lectures), lecturesDeleted:Array.isArray(old && old.lecturesDeleted) ? old.lecturesDeleted : []};
     }));
+    if (touched.length) await putMany('subjects', touched);
     await putMany('cards', cards);
     await putMany('lessons', lessons);
     if (meta.stats && meta.stats.days && typeof meta.stats.days === 'object') {
@@ -1914,12 +2109,12 @@ const actions = {
   'backup': () => backupSheet(),
   'make-backup': () => makeBackup(),
   'share-backup': () => shareBackup(),
-  'new-card': () => { const id = state.view.id; state.draft = newDraft(id, ls.get('last-type') || 'basic'); go({name:'edit'}) },
+  'new-card': () => { const id = state.view.id, f = state.view.lec; state.draft = newDraft(id, ls.get('last-type') || 'basic', null, f && f !== 'all' && f !== 'none' ? f : ''); go({name:'edit', back:f}) },
   'cancel-edit': async () => {
     const d = state.draft, dirty = d.question.trim() || d.answer.trim() || d.qMedia.length || d.options.some(o => o.text.trim() || o.explanation.trim());
     if (d.convertFrom) { if (!(await ask({title:'Umwandlung abbrechen?', text:'Deine Karteikarte bleibt unverändert.', ok:'Abbrechen', danger:true}))) return }
     else if (dirty && !(await ask({title:'Karte verwerfen?', text:'Was du eingegeben hast, geht verloren.', ok:'Verwerfen', danger:true}))) return;
-    const sid = d.subjectId; state.draft = null; go({name:'subject', id:sid});
+    const sid = d.subjectId, back = state.view.back; state.draft = null; go({name:'subject', id:sid, lec:back || 'all'});
   },
   'set-type': el => { setType(el.dataset.t); ls.set('last-type', el.dataset.t) },
   'set-lang': el => { state.draft.lang = el.dataset.l; render() },
@@ -1935,7 +2130,9 @@ const actions = {
   'rm-media': el => { (el.dataset.scope === 'l' ? lessonMedia : draftMedia)(el.dataset.key).splice(+el.dataset.i, 1); render() },
   'save-card': (el, e) => { e.preventDefault(); saveDraft(!!el.dataset.again) },
   'del-card': el => deleteCard(el.dataset.id),
-  'learn': () => startLearn(state.view.id || (state.session && state.session.sid)),
+  'learn': () => state.view.name === 'done' ? startLearn(state.session.sid, state.session.sel) : learnSheet(state.view.id),
+  'lsel-toggle': el => { toggleLecSel(lecSel.sel, el.dataset.l, lecSel.sid); learnSheet(lecSel.sid) },
+  'learn-go': () => { closeSheet(); startLearn(lecSel.sid, new Set(lecSel.sel)) },
   'end-learn': () => go({name:'subject', id:state.session.sid}),
   'flip': el => {
     const cur = state.session.cur; cur.flipped = !cur.flipped; cur.ever = true;
@@ -1960,6 +2157,21 @@ const actions = {
   },
   'check': () => state.view.name === 'lesson' ? lessonCheck() : checkAnswer(),
   'convert': el => convertCard(el.dataset.id),
+  'lec-filter': el => { state.view.lec = el.dataset.l; state.sel.ids.clear(); render() },
+  'lec-add': () => lecAddSheet(),
+  'lec-add-from-manage': () => lecAddSheet('manage'),
+  'lec-manage': () => manageSheet(),
+  'lec-del': el => deleteLecture(el.dataset.l),
+  'lec-move': el => { const s = subj(state.view.id), a = s.lectures, i = +el.dataset.i, j = i + +el.dataset.d; if (j < 0 || j >= a.length) return;
+    [a[i], a[j]] = [a[j], a[i]]; put('subjects', s).then(() => { render(); manageSheet() }) },
+  'sel-start': () => { state.sel.on = true; state.sel.ids.clear(); render() },
+  'sel-cancel': () => { state.sel.on = false; state.sel.ids.clear(); render() },
+  'sel-toggle': el => { const ids = state.sel.ids, id = el.dataset.id; if (ids.has(id)) ids.delete(id); else ids.add(id); render() },
+  'sel-all': () => { const f = state.view.lec || 'all', shown = cardsOf(state.view.id).filter(x => inFilter(x, f)), ids = state.sel.ids;
+    if (shown.every(x => ids.has(x.id))) shown.forEach(x => ids.delete(x.id)); else shown.forEach(x => ids.add(x.id)); render() },
+  'sel-move': () => { if (!lecturesOf(state.view.id).length) lecAddSheet('move'); else moveSheet() },
+  'sel-to': el => moveSelected(el.dataset.l),
+  'sel-to-new': () => lecAddSheet('move'),
   'stats': () => go({name:'stats'}),
   'reset-progress': el => resetProgress(el.dataset.id || null),
   'account': () => accountSheet(),
@@ -1980,13 +2192,13 @@ const actions = {
   'lesson-open': el => startLesson(el.dataset.id),
   'lesson-next': () => lessonNext(),
   'lesson-exit': () => go({name:'subject', id:lessonById(state.lp.id).subjectId}),
-  'lesson-new': () => { state.ldraft = newLessonDraft(state.view.id); go({name:'lesson-edit'}) },
+  'lesson-new': () => { const f = state.view.lec; state.ldraft = newLessonDraft(state.view.id, f && f !== 'all' && f !== 'none' ? f : ''); go({name:'lesson-edit', back:f}) },
   'lesson-edit': el => { state.ldraft = lessonToDraft(lessonById(el.dataset.id)); go({name:'lesson-edit'}) },
   'lesson-del': el => deleteLesson(el.dataset.id),
   'lesson-save': () => saveLesson(),
   'lesson-cancel': async () => {
     if (!(await ask({title:'Bearbeitung abbrechen?', text:'Nicht gespeicherte Änderungen gehen verloren.', ok:'Verwerfen', danger:true}))) return;
-    const sid = state.ldraft.subjectId; state.ldraft = null; go({name:'subject', id:sid});
+    const sid = state.ldraft.subjectId, back = state.view.back; state.ldraft = null; go({name:'subject', id:sid, lec:back || 'all'});
   },
   'lset-lang': el => { state.ldraft.lang = el.dataset.l; render() },
   'lb-add': el => { state.ldraft.blocks.push(el.dataset.k === 'text' ? blankTextBlock() : blankQBlock()); render();
@@ -2001,9 +2213,11 @@ const actions = {
   'lb-rmopt': el => { state.ldraft.blocks[+el.dataset.i].options.splice(+el.dataset.o, 1); render() },
   'exam-setup': () => examSetupSheet(state.view.id || (state.exam && state.exam.sid)),
   'setup-type': el => { const t = el.dataset.t; if (setup.types.has(t)) { if (setup.types.size > 1) setup.types.delete(t) } else setup.types.add(t); examSetupSheet(setup.sid) },
+  'esel-toggle': el => { toggleLecSel(setup.lecs, el.dataset.l, setup.sid); examSetupSheet(setup.sid) },
   'setup-count': el => { setup.count = +el.dataset.n; examSetupSheet(setup.sid) },
   'exam-start': () => {
-    const ids = shuffle(cardsOf(setup.sid).filter(c => setup.types.has(c.type)).map(c => c.id));
+    const lecOn = lecturesOf(setup.sid).length > 0;
+    const ids = shuffle(cardsOf(setup.sid).filter(c => setup.types.has(c.type) && (!lecOn || setup.lecs.has(lecKey(c)))).map(c => c.id));
     closeSheet(); startExam(setup.sid, setup.count ? ids.slice(0, setup.count) : ids);
   },
   'exam-go': el => { state.exam.idx = +el.dataset.i; render(); window.scrollTo(0, 0) },
@@ -2036,10 +2250,19 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && layer.innerHTML) { closeSheet(false); return }
   const t = e.target;
   if ((e.key === 'Enter' || e.key === ' ') && t.dataset && t.dataset.action === 'flip') { e.preventDefault(); actions.flip(t) }
+  if ((e.key === 'Enter' || e.key === ' ') && t.dataset && t.dataset.action === 'sel-toggle') { e.preventDefault(); actions['sel-toggle'](t) }
 });
 document.addEventListener('submit', e => {
   e.preventDefault();
   if (e.target.dataset.form === 'subject') createSubject();
+  else if (e.target.dataset.form === 'lec-add') {
+    const after = e.target.dataset.after, name = ($('#lec-name') || {}).value || '';
+    addLecture(state.view.id, name).then(L => {
+      if (after === 'move') return moveSelected(L.id);
+      if (after === 'manage') { render(); manageSheet(); return }
+      closeSheet(); state.view.lec = L.id; render(); toast(`Vorlesung «${L.name}» angelegt`);
+    }).catch(() => toast('Anlegen hat nicht geklappt'));
+  }
   else if (e.target.dataset.form === 'auth') submitAuth(e.target);
 });
 function onBind(e){
@@ -2049,6 +2272,7 @@ function onBind(e){
   if (lb && state.ldraft) {
     const d = state.ldraft, v = e.target.value, p = lb.split('.');
     if (p[0] === 'title') d.title = v;
+    else if (p[0] === 'lectureId') d.lectureId = v;
     else if (p.length === 3) d.blocks[+p[1]][p[2]] = v;
     else d.blocks[+p[1]].options[+p[3]][p[4]] = v;
     return;
@@ -2057,12 +2281,18 @@ function onBind(e){
   const d = state.draft, v = e.target.value;
   if (b.startsWith('opt.')) { const [, i, k] = b.split('.'); d.options[+i][k] = v }
   else d[b] = v;
-  if (b === 'subjectId') render();
+  if (b === 'subjectId') { d.lectureId = ''; render() }
 }
 document.addEventListener('input', onBind);
 document.addEventListener('change', e => {
   const t = e.target;
+  if (t.dataset && t.dataset.lecRename) {
+    const s = subj(state.view.id), L = s && (s.lectures || []).find(x => x.id === t.dataset.lecRename), v = t.value.trim().slice(0, 80);
+    if (L && v && v !== L.name) { L.name = v; put('subjects', s).then(() => render()) } else if (L) t.value = L.name;
+    return;
+  }
   if (t.dataset && t.dataset.bind === 'subjectId') { if (state.draft && state.draft.subjectId !== t.value) onBind(e); return }
+  if (t.tagName === 'SELECT' && t.dataset && (t.dataset.bind || t.dataset.lbind)) { onBind(e); return }
   if (t.dataset && t.dataset.media && state.draft) { draftMedia(t.dataset.media).push(...t.files); render(); return }
   if (t.dataset && t.dataset.lmedia && state.ldraft) { lessonMedia(t.dataset.lmedia).push(...t.files); render(); return }
   if (t.dataset && 'import' in t.dataset && t.files[0]) importBackup(t.files[0]);
