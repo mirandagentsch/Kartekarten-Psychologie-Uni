@@ -162,7 +162,7 @@ input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var
 .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .opt-ed{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px;display:grid;gap:10px}
 .opt-head{display:flex;gap:8px;align-items:center}
-.opt-head input{flex:1}
+.opt-head textarea,.kp-ed-top textarea{flex:1;min-height:48px;resize:none;overflow:hidden}
 .mark{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:46px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface2);font-weight:600;font-size:14px;color:var(--muted)}
 .mark .ck{width:20px;height:20px;border-radius:6px;border:2px solid currentColor;display:grid;place-items:center}
 .mark.radio .ck{border-radius:50%}
@@ -175,7 +175,7 @@ input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var
 .truth button.on.f{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .kp-ed-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .kp-ed-top .num{font-family:var(--round);font-weight:700;color:var(--muted);width:22px}
-.kp-ed-top input{flex:1 1 220px}
+.kp-ed-top textarea{flex:1 1 220px}
 .att-list{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .att{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:4px 4px 4px 4px;border-radius:12px;background:var(--surface2);border:1px solid var(--line);font-size:14px}
 .att img{width:36px;height:36px;object-fit:cover;border-radius:8px;flex:none}
@@ -269,6 +269,46 @@ input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var
 .file-chip .fi svg{width:18px;height:18px}
 .file-chip span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+/* Prüfung */
+.exam-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.exam-head b{font-family:var(--round);font-size:17px}
+.dots{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 18px}
+.dots button{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);font-size:13px;font-weight:650;color:var(--muted);font-variant-numeric:tabular-nums}
+.dots button.ans{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.dots button.cur{border-color:var(--accent);color:var(--ink);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent)}
+.dots button.r-good{background:var(--good-soft);color:var(--good);border-color:transparent}
+.dots button.r-mid{background:var(--warn-soft);color:color-mix(in srgb,#B86E00 85%,var(--ink));border-color:transparent}
+.dots button.r-bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.exam-nav{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.exam-nav .btn{min-height:54px}
+.answer-box{background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:10px}
+.answer-box .lbl{color:var(--muted);font-size:13px}
+.self{display:grid;gap:10px}
+.self .pill-group .pill{flex:1;min-width:0}
+.self .pill.on.t{background:var(--good-soft)}
+.self .pill.on.f{background:var(--bad-soft)}
+.setup-group{display:grid;gap:8px}
+.check-row{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 14px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface2);width:100%;text-align:left;font-weight:600}
+.check-row .box{width:24px;height:24px;border-radius:7px;border:2px solid var(--muted);display:grid;place-items:center;flex:none}
+.check-row.on{border-color:var(--accent);background:var(--accent-soft)}
+.check-row.on .box{background:var(--accent);border-color:var(--accent)}
+.check-row.on .box::after{content:"";width:9px;height:5px;border:2.5px solid var(--accent-ink);border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
+.check-row span.n{margin-left:auto;color:var(--muted);font-weight:500;font-size:14px}
+.score{display:grid;justify-items:center;gap:4px;text-align:center;padding:8px 0 4px}
+.score b{font-family:var(--round);font-size:clamp(44px,9vw,64px);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.score span{color:var(--muted)}
+.review{display:grid;gap:18px;margin-top:10px}
+.review .qcard{box-shadow:var(--shadow)}
+.qnum{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.qnum b{font-family:var(--round)}
+.ptag{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.ptag.good{background:var(--good-soft);color:var(--good)}
+.ptag.mid{background:var(--warn-soft);color:color-mix(in srgb,#B86E00 85%,var(--ink))}
+.ptag.bad{background:var(--bad-soft);color:var(--bad)}
+.link-btn{border:0;background:none;padding:6px 0 0;min-height:36px;color:var(--accent);font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.link-btn svg{width:16px;height:16px}
+.info{background:var(--accent-soft);border-radius:14px;padding:12px 14px;font-size:15px}
+
 /* Abschluss */
 .done{display:grid;justify-items:center;text-align:center;gap:16px;padding:24px 0}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;width:100%;margin:8px 0}
@@ -309,7 +349,7 @@ input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var
   main{padding-top:14px}
   .face,.qcard{padding:24px 18px 18px;border-radius:20px}
   .opt-head{flex-wrap:wrap}
-  .opt-head input{flex:1 1 100%;order:-1}
+  .opt-head textarea{flex:1 1 100%;order:-1}
   .mark{flex:1}
   .kp-main .pill-group{width:100%}
   .kp-main .pill{flex:1}
@@ -348,14 +388,16 @@ const L = {
     whyWrong:'Warum deine Wahl falsch ist', whyRight:'Warum das richtig ist', missed:'Diese richtige Antwort hast du nicht gewählt',
     stmtTrue:'Die Aussage ist richtig', stmtFalse:'Die Aussage ist falsch', noExpl:'Zu dieser Option ist keine Erklärung hinterlegt.',
     of:'von', correctJudged:'richtig beurteilt', point:'Punkt', points:'Punkte', yourPick:'deine Wahl', correctLbl:'richtig', wrongLbl:'falsch',
-    basic:'Karteikarte', single:'Single Choice', multi:'Multiple Choice', kprim:'K-prim', dec:','},
+    basic:'Karteikarte', single:'Single Choice', multi:'Multiple Choice', kprim:'K-prim', dec:',',
+    reveal:'Antwort aufdecken', selfQ:'Hast du es gewusst?', selfYes:'Gewusst', selfNo:'Nicht gewusst', selfTag:'Selbstbewertung', unanswered:'Nicht beantwortet'},
   en:{question:'Question', answer:'Answer', tap:'Tap or click to flip', tapBack:'Tap again to return to the question', known:'Got it', again:'Practise again',
     check:'Check answer', chooseOne:'Choose one answer', chooseMany:'Choose all correct answers', judgeAll:'Judge each statement',
     t:'true', f:'false', right:'Correct', wrong:'Incorrect', allRight:'Correct!', notRight:'Not correct', partly:'Not quite',
     whyWrong:'Why your choice is wrong', whyRight:'Why this is correct', missed:'You did not select this correct answer',
     stmtTrue:'The statement is true', stmtFalse:'The statement is false', noExpl:'No explanation has been added for this option.',
     of:'of', correctJudged:'judged correctly', point:'point', points:'points', yourPick:'your choice', correctLbl:'correct', wrongLbl:'incorrect',
-    basic:'Flashcard', single:'Single choice', multi:'Multiple choice', kprim:'K-prim', dec:'.'}
+    basic:'Flashcard', single:'Single choice', multi:'Multiple choice', kprim:'K-prim', dec:'.',
+    reveal:'Reveal answer', selfQ:'Did you know it?', selfYes:'Knew it', selfNo:'Did not know', selfTag:'Self-assessment', unanswered:'Not answered'}
 };
 const num = (n, lang) => String(n).replace('.', L[lang].dec);
 
@@ -421,6 +463,8 @@ function mediaBlock(list){
   return `<div class="media-row">${list.map(m => `<div class="media" data-mid="${esc(m.id)}"></div>`).join('')}</div>`;
 }
 function hydrate(root){
+  root.querySelectorAll('img[data-thumb]:not([src])').forEach(async im => { const r = await mediaURL(im.dataset.thumb); if (r) im.src = r.url });
+  root.querySelectorAll('textarea.grow-ta').forEach(autoGrow);
   root.querySelectorAll('[data-mid]:not([data-ready])').forEach(async el => {
     el.dataset.ready = '1';
     const r = await mediaURL(el.dataset.mid);
@@ -442,6 +486,7 @@ function hydrate(root){
 }
 
 /* ---------- Kleine Hilfen ---------- */
+function autoGrow(t){ t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px' }
 let toastTimer;
 function toast(msg){
   document.querySelectorAll('.toast').forEach(t => t.remove());
@@ -468,7 +513,7 @@ function go(view){ state.view = view; state.err = ''; render(); window.scrollTo(
 /* ---------- Ansichten ---------- */
 function render(){
   const v = state.view.name;
-  ({home:viewHome, subject:viewSubject, edit:viewEdit, learn:viewLearn, done:viewDone})[v]();
+  ({home:viewHome, subject:viewSubject, edit:viewEdit, learn:viewLearn, done:viewDone, exam:viewExam, 'exam-result':viewExamResult})[v]();
   hydrate(mainEl);
 }
 
@@ -486,7 +531,7 @@ function installHint(){
 
 function viewHome(){
   barEl.innerHTML = `<div class="bar-in"><div class="bar-title brand"><span class="brand-mark"></span>Karteikarten</div>
-    <button class="btn ghost" data-action="backup" style="color:var(--accent)">${I.box}Backup</button></div>`;
+    <button class="btn ghost" data-action="backup" style="color:var(--accent)">${I.box}Import</button></div>`;
   const s = state.subjects;
   if (!s.length) {
     mainEl.innerHTML = installHint() + `<div class="empty"><div class="deck-art"><i></i><i></i><i></i></div>
@@ -517,19 +562,22 @@ function viewSubject(){
       <p class="counts">${cs.length ? `${cs.length} ${cs.length === 1 ? 'Karte' : 'Karten'} · ${esc(byType)}` : 'Noch keine Karten'}</p>
       <div class="hero-actions">
         <button class="btn primary" data-action="learn" ${cs.length ? '' : 'disabled'}>Lernen starten</button>
+        <button class="btn" data-action="exam-setup" ${cs.length ? '' : 'disabled'}>Prüfung starten</button>
         <button class="btn" data-action="new-card">${I.plus}Neue Karte</button>
       </div></section>
     <div class="section-h"><h2>Karten</h2><span>${cs.length}</span></div>
     ${cs.length ? `<ul class="clist">${cs.map(cardRow).join('')}</ul>`
       : `<div class="empty" style="padding:24px 12px"><p>Hier erscheinen deine Karten. Tippe auf «Neue Karte», um die erste anzulegen.</p></div>`}`;
 }
+const mediaIds = c => [...(c.qMedia||[]), ...(c.aMedia||[]), ...(c.options||[]).flatMap(o => o.media || [])].map(m => m.id);
 function countMedia(c){ return (c.qMedia||[]).length + (c.aMedia||[]).length + (c.options||[]).reduce((n,o) => n + (o.media||[]).length, 0) }
 function cardRow(c){
   const m = countMedia(c);
   return `<li class="crow"><div class="crow-main">
     <div class="crow-tags"><span class="tag t-${esc(c.type)}">${esc(TYPE_NAMES[c.type] || '')}</span><span class="tag">${c.lang === 'en' ? 'EN' : 'DE'}</span>
     ${m ? `<span class="tag">${I.clip}${m}</span>` : ''}</div>
-    <div class="crow-q">${esc(c.question) || '<span class="muted">(nur Anhang)</span>'}</div></div>
+    <div class="crow-q">${esc(c.question) || '<span class="muted">(nur Anhang)</span>'}</div>
+    ${c.type === 'basic' ? `<button class="link-btn" data-action="convert" data-id="${esc(c.id)}">${I.flip}In Choice-Frage umwandeln</button>` : ''}</div>
     <button class="icon-btn danger" data-action="del-card" data-id="${esc(c.id)}" aria-label="Karte löschen">${I.trash}</button></li>`;
 }
 
@@ -545,7 +593,7 @@ function draftMedia(key){ const d = state.draft; return key === 'q' ? d.qMedia :
 function mediaEditor(key, label){
   const list = draftMedia(key);
   return `<div class="att-list">${list.map((f, i) => `<span class="att">
-      ${f.type && f.type.startsWith('image/') ? `<img src="${previewURL(f)}" alt="">` : `<span class="fi">${I.file}</span>`}
+      ${f.type && f.type.startsWith('image/') ? (f instanceof Blob ? `<img src="${previewURL(f)}" alt="">` : `<img data-thumb="${esc(f.id)}" alt="">`) : `<span class="fi">${I.file}</span>`}
       <span class="att-name">${esc(f.name || 'Datei')}</span>
       <button type="button" class="att-x" data-action="rm-media" data-key="${key}" data-i="${i}" aria-label="Anhang entfernen">×</button></span>`).join('')}
     <label class="att-add">${I.clip}${label}<input type="file" multiple class="vh" data-media="${key}"></label></div>`;
@@ -553,13 +601,14 @@ function mediaEditor(key, label){
 function viewEdit(){
   const d = state.draft, s = subj(d.subjectId);
   barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="cancel-edit">${I.back}Abbrechen</button>
-    <div class="bar-title center">Neue Karte</div><div style="width:92px"></div></div>`;
+    <div class="bar-title center">${d.convertFrom ? 'Karte umwandeln' : 'Neue Karte'}</div><div style="width:92px"></div></div>`;
   const opts = d.type === 'single' || d.type === 'multi';
   mainEl.innerHTML = `<form class="form" data-form="card" style="--c:${safeColor(s && s.color)}" novalidate>
+    ${d.convertFrom ? `<p class="info">Die Antwort deiner Karteikarte steht jetzt als <b>${d.type === 'kprim' ? 'richtige Aussage 1' : 'richtige Antwort A'}</b>. Ergänze ${d.type === 'kprim' ? 'die weiteren Aussagen' : 'falsche Antworten'} und Erklärungen. Beim Speichern ersetzt die neue Karte deine Karteikarte.</p>` : ''}
     <div class="field"><label class="lbl" for="f-s">Fach</label>
       <select id="f-s" data-bind="subjectId">${state.subjects.map(x => `<option value="${esc(x.id)}" ${x.id === d.subjectId ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>
     <div class="field"><span class="lbl">Kartentyp</span>
-      <div class="seg">${TYPES.map(t => `<button type="button" class="${d.type === t ? 'on' : ''}" data-action="set-type" data-t="${t}">${TYPE_NAMES[t]}</button>`).join('')}</div></div>
+      <div class="seg">${TYPES.filter(t => !d.convertFrom || t !== 'basic').map(t => `<button type="button" class="${d.type === t ? 'on' : ''}" data-action="set-type" data-t="${t}">${TYPE_NAMES[t]}</button>`).join('')}</div></div>
     <div class="field"><span class="lbl">Sprache der Karte</span>
       <div class="seg two"><button type="button" class="${d.lang === 'de' ? 'on' : ''}" data-action="set-lang" data-l="de">Deutsch</button>
       <button type="button" class="${d.lang === 'en' ? 'on' : ''}" data-action="set-lang" data-l="en">English</button></div></div>
@@ -572,7 +621,7 @@ function viewEdit(){
       <p class="sub">${d.type === 'single' ? 'Markiere genau eine Antwort als richtig.' : 'Markiere alle richtigen Antworten (mindestens eine).'} Schreibe zu jeder Option, warum sie richtig oder falsch ist.</p>
       ${d.options.map((o, i) => `<div class="opt-ed"><div class="opt-head">
           <button type="button" class="mark ${d.type === 'single' ? 'radio' : ''} ${o.correct ? 'on' : ''}" data-action="toggle-correct" data-i="${i}" aria-pressed="${!!o.correct}"><span class="ck"></span>richtig</button>
-          <input type="text" data-bind="opt.${i}.text" value="${esc(o.text)}" placeholder="Antwort ${String.fromCharCode(65 + i)}" aria-label="Antwort ${String.fromCharCode(65 + i)}">
+          <textarea rows="1" class="grow-ta" data-bind="opt.${i}.text" placeholder="Antwort ${String.fromCharCode(65 + i)}" aria-label="Antwort ${String.fromCharCode(65 + i)}">${esc(o.text)}</textarea>
           ${d.options.length > 2 ? `<button type="button" class="icon-btn" data-action="rm-opt" data-i="${i}" aria-label="Option entfernen">${I.close}</button>` : ''}</div>
         <textarea rows="2" data-bind="opt.${i}.explanation" placeholder="Erklärung: Warum ist diese Antwort richtig bzw. falsch?" aria-label="Erklärung zu Antwort ${String.fromCharCode(65 + i)}">${esc(o.explanation)}</textarea>
         ${mediaEditor('o' + i, 'Anhang zur Erklärung')}</div>`).join('')}
@@ -580,13 +629,13 @@ function viewEdit(){
     ${d.type === 'kprim' ? `<div class="field"><span class="lbl">Vier Aussagen</span>
       <p class="sub">Lege bei jeder Aussage fest, ob sie richtig oder falsch ist, und erkläre warum.</p>
       ${d.options.map((o, i) => `<div class="opt-ed"><div class="kp-ed-top"><span class="num">${i + 1}</span>
-          <input type="text" data-bind="opt.${i}.text" value="${esc(o.text)}" placeholder="Aussage ${i + 1}" aria-label="Aussage ${i + 1}">
+          <textarea rows="1" class="grow-ta" data-bind="opt.${i}.text" placeholder="Aussage ${i + 1}" aria-label="Aussage ${i + 1}">${esc(o.text)}</textarea>
           <div class="truth"><button type="button" class="t ${o.correct === true ? 'on' : ''}" data-action="set-truth" data-i="${i}" data-v="1">richtig</button>
           <button type="button" class="f ${o.correct === false ? 'on' : ''}" data-action="set-truth" data-i="${i}" data-v="0">falsch</button></div></div>
         <textarea rows="2" data-bind="opt.${i}.explanation" placeholder="Erklärung: Warum ist diese Aussage richtig bzw. falsch?" aria-label="Erklärung zu Aussage ${i + 1}">${esc(o.explanation)}</textarea>
         ${mediaEditor('o' + i, 'Anhang zur Erklärung')}</div>`).join('')}</div>` : ''}
     ${state.err ? `<div class="err" role="alert">${esc(state.err)}</div>` : ''}
-    <div class="form-actions"><button type="button" class="btn" data-action="save-card" data-again="1">Speichern &amp; nächste</button>
+    <div class="form-actions">${d.convertFrom ? '' : `<button type="button" class="btn" data-action="save-card" data-again="1">Speichern &amp; nächste</button>`}
       <button type="button" class="btn primary" data-action="save-card">Speichern</button></div>
   </form>`;
 }
@@ -623,6 +672,7 @@ async function saveDraft(again){
   const storeFiles = async list => {
     const out = [];
     for (const f of list) {
+      if (!(f instanceof Blob)) { out.push({id:String(f.id), name:String(f.name || 'Datei'), type:String(f.type || 'application/octet-stream')}); continue }
       const id = uid(), type = f.type || 'application/octet-stream', name = f.name || 'Datei';
       await put('media', {id, name, type, size:f.size, data: await f.arrayBuffer()});
       created.push(id); out.push({id, name, type});
@@ -630,13 +680,19 @@ async function saveDraft(again){
     return out;
   };
   try {
-    const c = {id:uid(), subjectId:d.subjectId, type:d.type, lang:d.lang, question:d.question.trim(), qMedia: await storeFiles(d.qMedia),
-      created: Date.now(), stats:{known:0, again:0}};
+    const orig = d.convertFrom ? cardById(d.convertFrom) : null;
+    const c = {id: orig ? orig.id : uid(), subjectId:d.subjectId, type:d.type, lang:d.lang, question:d.question.trim(), qMedia: await storeFiles(d.qMedia),
+      created: orig ? orig.created : Date.now(), stats: orig && orig.stats ? orig.stats : {known:0, again:0}};
     if (d.type === 'basic') { c.answer = d.answer.trim(); c.aMedia = await storeFiles(d.aMedia) }
     else { c.options = []; for (const o of d.options) c.options.push({text:o.text.trim(), correct:o.correct === true, explanation:o.explanation.trim(), media: await storeFiles(o.media)}) }
     await put('cards', c);
-    state.cards.push(c); ls.set('last-lang', d.lang);
-    toast('Karte gespeichert');
+    if (orig) {
+      const keep = new Set(mediaIds(c));
+      for (const m of mediaIds(orig)) if (!keep.has(m)) await del('media', m).catch(() => {});
+      state.cards = state.cards.map(x => x.id === c.id ? c : x);
+      toast('Karte umgewandelt');
+    } else { state.cards.push(c); toast('Karte gespeichert') }
+    ls.set('last-lang', d.lang);
     if (again) { state.draft = newDraft(d.subjectId, d.type, d.lang); state.err = ''; render(); window.scrollTo(0, 0) }
     else { state.draft = null; go({name:'subject', id:d.subjectId}) }
   } catch (err) {
@@ -679,38 +735,11 @@ function viewLearn(){
     </div></div>`;
   } else {
     const sub = c.type === 'single' ? T.chooseOne : c.type === 'multi' ? T.chooseMany : T.judgeAll;
-    let inner = '';
-    if (c.type === 'kprim') {
-      inner = `<div class="opts">${c.options.map((o, i) => {
-        const j = cur.judge[i], ok = cur.checked && j === o.correct, bad = cur.checked && j !== o.correct;
-        return `<div class="kp-row ${ok ? 'right' : ''} ${bad ? 'wrong' : ''}"><div class="kp-main"><div class="kp-text">${esc(o.text)}</div>
-          <div class="pill-group"><button type="button" class="pill t ${j === true ? 'on' : ''}" data-action="judge" data-i="${i}" data-v="1" ${cur.checked ? 'disabled' : ''}>${T.t}</button>
-          <button type="button" class="pill f ${j === false ? 'on' : ''}" data-action="judge" data-i="${i}" data-v="0" ${cur.checked ? 'disabled' : ''}>${T.f}</button></div></div>
-          ${bad ? explBlock(o.correct ? 'good' : 'bad', o.correct ? T.stmtTrue : T.stmtFalse, o, T) : ''}</div>`;
-      }).join('')}</div>`;
-    } else {
-      const radio = c.type === 'single' ? 'radio' : '';
-      inner = `<div class="opts">${c.options.map((o, i) => {
-        const sel = cur.sel.includes(i);
-        let cls = sel ? 'sel' : '', verdict = '', ex = '';
-        if (cur.checked) {
-          if (o.correct && sel) { cls = 'right'; verdict = T.correctLbl }
-          else if (o.correct && !sel) { cls = 'missed'; verdict = T.correctLbl }
-          else if (!o.correct && sel) { cls = 'wrong'; verdict = T.wrongLbl }
-          else cls = '';
-          if (!cur.result.ok) {
-            if (!o.correct && sel) ex = explBlock('bad', T.whyWrong, o, T);
-            else if (o.correct) ex = explBlock('good', (sel || c.type === 'single') ? T.whyRight : `${T.whyRight} – ${T.missed}`, o, T);
-          }
-        }
-        return `<button type="button" class="opt ${radio} ${cls}" data-action="pick" data-i="${i}" ${cur.checked ? 'disabled' : ''}>
-          <span class="box"></span><span class="otext">${esc(o.text)}</span>${verdict ? `<span class="verdict">${verdict}</span>` : ''}</button>${ex}`;
-      }).join('')}</div>`;
-    }
-    const ready = c.type === 'kprim' ? cur.judge.every(x => x !== null) : cur.sel.length > 0;
+    const inner = choiceInner(c, cur, cur.checked, cur.result, T);
+    const ready = isAnswered(c, cur);
     body = `<div class="qcard" lang="${lang}">${tag}<span>${sub}</span></div>
       <div class="qtext">${esc(c.question)}</div>${mediaBlock(c.qMedia)}${inner}
-      ${cur.checked ? resultBanner(c, T, lang) : `<button type="button" class="btn primary wide" data-action="check" ${ready ? '' : 'disabled'}>${T.check}</button>`}</div>`;
+      ${cur.checked ? resultBanner(c, cur.result, T, lang) : `<button type="button" class="btn primary wide" data-action="check" ${ready ? '' : 'disabled'}>${T.check}</button>`}</div>`;
   }
   const showRate = c.type === 'basic' ? cur.ever : cur.checked;
   const sug = cur.checked ? (cur.result.ok ? 'known' : 'again') : '';
@@ -726,8 +755,45 @@ function explBlock(kind, head, o, T){
   return `<div class="expl ${kind}"><div class="expl-h">${esc(head)}</div>
     <div class="expl-t">${o.explanation ? esc(o.explanation) : `<em class="muted">${T.noExpl}</em>`}</div>${mediaBlock(o.media)}</div>`;
 }
-function resultBanner(c, T, lang){
-  const r = state.session.cur.result;
+function choiceInner(c, a, checked, r, T){
+  if (c.type === 'kprim') {
+    return `<div class="opts">${c.options.map((o, i) => {
+      const j = a.judge[i], ok = checked && j === o.correct, bad = checked && j !== o.correct;
+      return `<div class="kp-row ${ok ? 'right' : ''} ${bad ? 'wrong' : ''}"><div class="kp-main"><div class="kp-text">${esc(o.text)}</div>
+        <div class="pill-group"><button type="button" class="pill t ${j === true ? 'on' : ''}" data-action="judge" data-i="${i}" data-v="1" ${checked ? 'disabled' : ''}>${T.t}</button>
+        <button type="button" class="pill f ${j === false ? 'on' : ''}" data-action="judge" data-i="${i}" data-v="0" ${checked ? 'disabled' : ''}>${T.f}</button></div></div>
+        ${bad ? explBlock(o.correct ? 'good' : 'bad', o.correct ? T.stmtTrue : T.stmtFalse, o, T) : ''}</div>`;
+    }).join('')}</div>`;
+  }
+  const radio = c.type === 'single' ? 'radio' : '';
+  return `<div class="opts">${c.options.map((o, i) => {
+    const sel = a.sel.includes(i);
+    let cls = sel ? 'sel' : '', verdict = '', ex = '';
+    if (checked) {
+      if (o.correct && sel) { cls = 'right'; verdict = T.correctLbl }
+      else if (o.correct && !sel) { cls = 'missed'; verdict = T.correctLbl }
+      else if (!o.correct && sel) { cls = 'wrong'; verdict = T.wrongLbl }
+      else cls = '';
+      if (!r.ok) {
+        if (!o.correct && sel) ex = explBlock('bad', T.whyWrong, o, T);
+        else if (o.correct) ex = explBlock('good', (sel || c.type === 'single') ? T.whyRight : `${T.whyRight} – ${T.missed}`, o, T);
+      }
+    }
+    return `<button type="button" class="opt ${radio} ${cls}" data-action="pick" data-i="${i}" ${checked ? 'disabled' : ''}>
+      <span class="box"></span><span class="otext">${esc(o.text)}</span>${verdict ? `<span class="verdict">${verdict}</span>` : ''}</button>${ex}`;
+  }).join('')}</div>`;
+}
+function scoreOf(c, a){
+  if (c.type === 'basic') return {ok: a.self === true, score: a.self === true ? 1 : 0};
+  if (c.type === 'kprim') {
+    const n = c.options.filter((o, i) => a.judge[i] === o.correct).length;
+    return {n, score: n === 4 ? 1 : n === 3 ? 0.5 : 0, ok: n === 4};
+  }
+  const ok = c.options.every((o, i) => o.correct === a.sel.includes(i));
+  return {ok, score: ok ? 1 : 0};
+}
+const isAnswered = (c, a) => c.type === 'basic' ? a.self === true || a.self === false : c.type === 'kprim' ? a.judge.every(x => x !== null) : a.sel.length > 0;
+function resultBanner(c, r, T, lang){
   if (c.type === 'kprim') {
     const pts = r.score, cls = pts === 1 ? 'good' : pts === 0.5 ? 'mid' : 'bad';
     const head = pts === 1 ? T.allRight : pts === 0.5 ? T.partly : T.notRight;
@@ -737,13 +803,7 @@ function resultBanner(c, T, lang){
 }
 function checkAnswer(){
   const s = state.session, cur = s.cur, c = cardById(cur.id);
-  if (c.type === 'kprim') {
-    const n = c.options.filter((o, i) => cur.judge[i] === o.correct).length;
-    cur.result = {n, score: n === 4 ? 1 : n === 3 ? 0.5 : 0, ok: n === 4};
-  } else {
-    const ok = c.options.every((o, i) => o.correct === cur.sel.includes(i));
-    cur.result = {ok, score: ok ? 1 : 0};
-  }
+  cur.result = scoreOf(c, cur);
   if (!s.seen.has(c.id)) { s.seen.add(c.id); s.maxPts += 1; s.pts += cur.result.score }
   cur.checked = true; render();
 }
@@ -768,12 +828,123 @@ function viewDone(){
       <button class="btn" data-action="open-subject" data-id="${esc(s.sid)}">Zurück zum Fach</button></div></div>`;
 }
 
+/* ---------- Prüfungsmodus ---------- */
+const shuffle = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]] } return b };
+const pct = (p, m) => m ? Math.round(p / m * 100) : 0;
+let setup = null;
+function examSetupSheet(sid){
+  const cs = cardsOf(sid), avail = TYPES.filter(t => cs.some(c => c.type === t));
+  if (!setup || setup.sid !== sid) setup = {sid, types:new Set(avail), count:20};
+  const n = cs.filter(c => setup.types.has(c.type)).length;
+  const counts = [10, 20, 30].filter(x => x < n);
+  if (setup.count !== 0 && !counts.includes(setup.count)) setup.count = 0;
+  openSheet(`<h2>Prüfung starten</h2>
+    <p>Die Fragen kommen in zufälliger Reihenfolge, ohne Auflösung. Am Ende siehst du Punktzahl, Lösungen und Erklärungen.</p>
+    <div class="setup-group"><span class="lbl">Fragetypen</span>
+      ${avail.map(t => `<button type="button" class="check-row ${setup.types.has(t) ? 'on' : ''}" data-action="setup-type" data-t="${t}"><span class="box"></span>${TYPE_NAMES[t]}${t === 'basic' ? ' (Selbstbewertung)' : ''}<span class="n">${cs.filter(c => c.type === t).length}</span></button>`).join('')}</div>
+    <div class="setup-group"><span class="lbl">Anzahl Fragen</span>
+      <div class="seg">${counts.map(x => `<button type="button" class="${setup.count === x ? 'on' : ''}" data-action="setup-count" data-n="${x}">${x}</button>`).join('')}
+        <button type="button" class="${setup.count === 0 ? 'on' : ''}" data-action="setup-count" data-n="0">Alle (${n})</button></div></div>
+    <div class="sheet-actions"><button class="btn" data-action="sheet-no">Abbrechen</button>
+      <button class="btn primary" data-action="exam-start" ${n ? '' : 'disabled'}>Los (${setup.count && setup.count < n ? setup.count : n} Fragen)</button></div>`);
+}
+function startExam(sid, ids){
+  if (!ids.length) return;
+  const answers = {};
+  ids.forEach(id => answers[id] = {id, sel:[], judge:[null, null, null, null], flipped:false, self:null, checked:false});
+  state.exam = {sid, ids, idx:0, answers, results:null, onlyWrong:false};
+  go({name:'exam'});
+}
+function activeAnswer(){
+  if (state.view.name === 'exam') { const e = state.exam; return e.answers[e.ids[e.idx]] }
+  return state.session.cur;
+}
+function examDots(){
+  if (state.view.name !== 'exam') return;
+  const e = state.exam;
+  mainEl.querySelectorAll('.dots button').forEach((b, i) => b.classList.toggle('ans', isAnswered(cardById(e.ids[i]), e.answers[e.ids[i]])));
+  const done = e.ids.filter(id => isAnswered(cardById(id), e.answers[id])).length, bar = mainEl.querySelector('.progress i');
+  if (bar) bar.style.width = pct(done, e.ids.length) + '%';
+  const cnt = mainEl.querySelector('.exam-count'); if (cnt) cnt.textContent = `${done} von ${e.ids.length} beantwortet`;
+}
+function questionHead(c, T, extra){
+  const sub = c.type === 'basic' ? T.selfTag : c.type === 'single' ? T.chooseOne : c.type === 'multi' ? T.chooseMany : T.judgeAll;
+  return `<div class="face-tag"><span class="tag t-${c.type}">${T[c.type]}</span><span>${sub}</span>${extra || ''}</div>
+    <div class="qtext">${esc(c.question)}</div>${mediaBlock(c.qMedia)}`;
+}
+function basicExamBody(c, a, T, review){
+  if (!a.flipped && !review) return `<button type="button" class="btn wide" data-action="exam-reveal">${T.reveal}</button>`;
+  const self = review
+    ? `<p class="small ${a.self === true ? '' : 'muted'}">${T.selfTag}: <b>${a.self === true ? T.selfYes : a.self === false ? T.selfNo : T.unanswered}</b></p>`
+    : `<div class="self"><span class="lbl">${T.selfQ}</span><div class="pill-group">
+        <button type="button" class="pill t ${a.self === true ? 'on' : ''}" data-action="exam-self" data-v="1">${T.selfYes}</button>
+        <button type="button" class="pill f ${a.self === false ? 'on' : ''}" data-action="exam-self" data-v="0">${T.selfNo}</button></div></div>`;
+  return `<div class="answer-box"><span class="lbl">${T.answer}</span><div class="atext">${esc(c.answer)}</div>${mediaBlock(c.aMedia)}</div>${self}`;
+}
+function viewExam(){
+  const e = state.exam, id = e.ids[e.idx], c = cardById(id), a = e.answers[id], sb = subj(e.sid);
+  const lang = c.lang === 'en' ? 'en' : 'de', T = L[lang], last = e.idx === e.ids.length - 1;
+  barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="exam-cancel">${I.back}Abbrechen</button><div class="bar-title center">Prüfung</div><div style="width:92px"></div></div>`;
+  mainEl.innerHTML = `<div style="--c:${safeColor(sb && sb.color)}">
+    <div class="exam-head"><b>Frage ${e.idx + 1} von ${e.ids.length}</b><span class="count exam-count"></span></div>
+    <div class="progress"><i style="width:0"></i></div>
+    <div class="dots">${e.ids.map((x, i) => `<button type="button" class="${i === e.idx ? 'cur' : ''}" data-action="exam-go" data-i="${i}" aria-label="Frage ${i + 1}">${i + 1}</button>`).join('')}</div>
+    <div class="qcard" lang="${lang}">${questionHead(c, T)}
+      ${c.type === 'basic' ? basicExamBody(c, a, T, false) : choiceInner(c, a, false, null, T)}</div>
+    <div class="exam-nav"><button class="btn" data-action="exam-move" data-d="-1" ${e.idx ? '' : 'disabled'}>Zurück</button>
+      ${last ? `<button class="btn primary" data-action="exam-submit">Prüfung abgeben</button>` : `<button class="btn primary" data-action="exam-move" data-d="1">Weiter</button>`}</div>
+    ${last ? '' : `<button class="btn ghost wide" data-action="exam-submit" style="margin-top:8px;color:var(--accent)">Prüfung jetzt abgeben</button>`}</div>`;
+  examDots();
+}
+async function submitExam(){
+  const e = state.exam, open = e.ids.filter(id => !isAnswered(cardById(id), e.answers[id])).length;
+  if (open && !(await ask({title:'Prüfung abgeben?', text:`${open} ${open === 1 ? 'Frage ist' : 'Fragen sind'} noch unbeantwortet und ${open === 1 ? 'zählt' : 'zählen'} 0 Punkte.`, ok:'Abgeben'}))) return;
+  e.results = {};
+  e.ids.forEach(id => { const a = e.answers[id]; a.checked = true; e.results[id] = scoreOf(cardById(id), a) });
+  go({name:'exam-result'});
+}
+function viewExamResult(){
+  const e = state.exam, sb = subj(e.sid), ids = e.ids;
+  const total = ids.reduce((n, id) => n + e.results[id].score, 0), max = ids.length, full = ids.filter(id => e.results[id].score === 1).length;
+  const wrong = ids.filter(id => e.results[id].score < 1);
+  barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="open-subject" data-id="${esc(e.sid)}">${I.back}Fach</button><div class="bar-title center">Ergebnis</div><div style="width:92px"></div></div>`;
+  const shown = e.onlyWrong ? wrong : ids;
+  mainEl.innerHTML = `<div style="--c:${safeColor(sb && sb.color)}">
+    <section class="hero"><div class="score"><b>${num(Math.round(total * 10) / 10, 'de')} / ${max}</b><span>Punkte · ${pct(total, max)} %</span></div>
+      <div class="stats"><div class="stat"><b>${full}</b><span>voll richtig</span></div><div class="stat"><b>${wrong.length}</b><span>mit Fehlern</span></div></div>
+      <div class="hero-actions">
+        ${wrong.length ? `<button class="btn primary" data-action="exam-retry">Fehler nochmal prüfen (${wrong.length})</button>` : ''}
+        <button class="btn" data-action="exam-setup">Neue Prüfung</button></div></section>
+    <div class="section-h"><h2>Auswertung</h2></div>
+    ${wrong.length && wrong.length < ids.length ? `<div class="seg two" style="margin-bottom:14px"><button type="button" class="${e.onlyWrong ? '' : 'on'}" data-action="exam-filter" data-w="0">Alle Fragen</button><button type="button" class="${e.onlyWrong ? 'on' : ''}" data-action="exam-filter" data-w="1">Nur Fehler</button></div>` : ''}
+    <div class="dots">${ids.map((id, i) => { const r = e.results[id].score; return `<button type="button" class="${r === 1 ? 'r-good' : r === 0.5 ? 'r-mid' : 'r-bad'}" data-action="exam-jump" data-id="${esc(id)}" aria-label="Frage ${i + 1}">${i + 1}</button>` }).join('')}</div>
+    <div class="review">${shown.map(id => reviewCard(id, ids.indexOf(id))).join('')}</div></div>`;
+}
+function reviewCard(id, i){
+  const e = state.exam, c = cardById(id), a = e.answers[id], r = e.results[id], lang = c.lang === 'en' ? 'en' : 'de', T = L[lang];
+  const cls = r.score === 1 ? 'good' : r.score === 0.5 ? 'mid' : 'bad';
+  const unans = !isAnswered(c, a) && c.type !== 'basic' ? `<p class="small muted">${T.unanswered}</p>` : '';
+  return `<article class="qcard" id="q-${esc(id)}" lang="${lang}"><div class="qnum"><b>Frage ${i + 1}</b><span class="ptag ${cls}">${num(r.score, 'de')} ${r.score === 1 ? 'Punkt' : 'Punkte'}</span></div>
+    ${questionHead(c, T)}${unans}
+    ${c.type === 'basic' ? basicExamBody(c, a, T, true) : choiceInner(c, a, true, r, T)}</article>`;
+}
+
+/* ---------- Umwandeln ---------- */
+function convertCard(id){
+  const c = cardById(id); if (!c || c.type !== 'basic') return;
+  const d = newDraft(c.subjectId, 'single', c.lang);
+  d.question = c.question || ''; d.qMedia = (c.qMedia || []).slice();
+  d.options[0] = {text:c.answer || '', correct:true, explanation:'', media:(c.aMedia || []).slice()};
+  d.convertFrom = c.id;
+  state.draft = d; go({name:'edit'});
+}
+
 /* ---------- Löschen ---------- */
 async function deleteCard(id){
   const c = cardById(id); if (!c) return;
   const ok = await ask({title:'Karte löschen?', text:`«${(c.question || 'Karte').slice(0, 80)}» und alle Anhänge dieser Karte werden endgültig gelöscht.`, ok:'Löschen', danger:true});
   if (!ok) return;
-  const ids = [...(c.qMedia||[]), ...(c.aMedia||[]), ...(c.options||[]).flatMap(o => o.media || [])].map(m => m.id);
+  const ids = mediaIds(c);
   try {
     await del('cards', id);
     for (const m of ids) { await del('media', m); const r = mediaCache.get(m); if (r) { URL.revokeObjectURL(r.url); mediaCache.delete(m) } }
@@ -824,10 +995,13 @@ async function shareFile(id){
 let backupFile = null;
 function backupSheet(){
   backupFile = null;
-  openSheet(`<h2>Backup</h2>
-    <p>Sichere alle Fächer, Karten und Anhänge in einer Datei. Mit dieser Datei überträgst du deine Karten auf dein MacBook, iPad oder iPhone: dort hier auf «Backup importieren» tippen.</p>
-    <div style="display:grid;gap:10px"><button class="btn primary" data-action="make-backup">Backup erstellen</button><div id="bk-out"></div>
-      <label class="btn">Backup importieren<input type="file" class="vh" data-import></label></div>
+  openSheet(`<h2>Import und Backup</h2>
+    <div class="setup-group"><span class="lbl">Karten importieren</span>
+      <p>Wähle eine .kartei-Datei, zum Beispiel Fragen, die Claude aus deiner Zusammenfassung erstellt hat, oder ein Backup von einem anderen Gerät. Gibt es das Fach schon, landen die Karten dort.</p>
+      <label class="btn primary">Datei importieren<input type="file" class="vh" data-import></label></div>
+    <div class="setup-group"><span class="lbl">Backup erstellen</span>
+      <p>Sichert alle Fächer, Karten und Anhänge in einer Datei. Damit überträgst du deine Karten auf dein MacBook, iPad oder iPhone.</p>
+      <button class="btn" data-action="make-backup">Backup erstellen</button><div id="bk-out"></div></div>
     <div class="store-info" id="bk-info"></div>
     <div class="sheet-actions"><button class="btn ghost" data-action="sheet-no">Schliessen</button></div>`);
   storageInfo();
@@ -840,6 +1014,18 @@ async function storageInfo(){
   el.innerHTML = lines.map(l => `<span>${esc(l)}</span>`).join('');
 }
 const MAGIC = 'KKBACKUP1';
+function normCard(c){
+  if (!c || !c.id || !TYPES.includes(c.type)) return null;
+  const med = l => Array.isArray(l) ? l.filter(m => m && m.id).map(m => ({id:String(m.id), name:String(m.name || 'Datei'), type:String(m.type || 'application/octet-stream')})) : [];
+  const out = {id:String(c.id), subjectId:String(c.subjectId), type:c.type, lang:c.lang === 'en' ? 'en' : 'de', question:String(c.question || ''), qMedia:med(c.qMedia),
+    created:+c.created || Date.now(), stats:{known:+(c.stats && c.stats.known) || 0, again:+(c.stats && c.stats.again) || 0}};
+  if (c.type === 'basic') { out.answer = String(c.answer || ''); out.aMedia = med(c.aMedia); return out }
+  if (!Array.isArray(c.options)) return null;
+  out.options = c.options.map(o => ({text:String(o && o.text || ''), correct:!!(o && o.correct === true), explanation:String(o && o.explanation || ''), media:med(o && o.media)}));
+  if (c.type === 'kprim' && out.options.length !== 4) return null;
+  if (out.options.length < 2) return null;
+  return out;
+}
 async function makeBackup(){
   const out = $('#bk-out'); if (!out) return;
   out.innerHTML = '<p class="muted small">Backup wird erstellt …</p>';
@@ -874,12 +1060,24 @@ async function importBackup(file){
     const len = new DataView(buf, MAGIC.length, 4).getUint32(0, true), start = MAGIC.length + 4;
     const meta = JSON.parse(new TextDecoder().decode(buf.slice(start, start + len))), base = start + len;
     if (meta.app !== 'karteikarten' || !Array.isArray(meta.subjects) || !Array.isArray(meta.cards)) throw new Error('format');
-    const ok = await ask({title:'Backup importieren?', text:`${meta.subjects.length} ${meta.subjects.length === 1 ? 'Fach' : 'Fächer'} und ${meta.cards.length} ${meta.cards.length === 1 ? 'Karte' : 'Karten'} werden übernommen. Deine bestehenden Karten bleiben erhalten; Karten, die schon vorhanden sind, werden nicht doppelt angelegt.`, ok:'Importieren'});
+    // Fächer mit gleichem Namen zusammenführen
+    const norm = x => String(x || '').trim().toLowerCase(), remap = {};
+    const newSubjects = meta.subjects.filter(s => s && s.id).filter(s => {
+      if (state.subjects.some(x => x.id === String(s.id))) return true;
+      const same = state.subjects.find(x => norm(x.name) === norm(s.name));
+      if (same) { remap[String(s.id)] = same.id; return false }
+      return true;
+    });
+    const cards = meta.cards.map(normCard).filter(Boolean).map(c => ({...c, subjectId: remap[c.subjectId] || c.subjectId}));
+    const into = [...new Set(cards.map(c => c.subjectId))].map(id => (state.subjects.find(x => x.id === id) || newSubjects.find(x => String(x.id) === id) || {}).name).filter(Boolean);
+    const ok = await ask({title:'Karten importieren?', text:`${cards.length} ${cards.length === 1 ? 'Karte wird' : 'Karten werden'} übernommen${into.length ? ` (Fach: ${into.join(', ')})` : ''}. Deine bestehenden Karten bleiben erhalten; Karten, die schon vorhanden sind, werden nicht doppelt angelegt.`, ok:'Importieren'});
     if (!ok) return;
     for (const m of (meta.media || [])) await put('media', {id:String(m.id), name:String(m.name || 'Datei'), type:String(m.type || 'application/octet-stream'), size:m.length, data:buf.slice(base + m.offset, base + m.offset + m.length)});
-    await putMany('subjects', meta.subjects.filter(s => s && s.id).map(s => ({id:String(s.id), name:String(s.name || 'Fach'), color:safeColor(s.color), created:+s.created || Date.now()})));
-    await putMany('cards', meta.cards.filter(c => c && c.id && TYPES.includes(c.type)));
-    await load(); toast(`Import fertig: ${meta.cards.length} Karten`); go({name:'home'});
+    await putMany('subjects', newSubjects.map(s => ({id:String(s.id), name:String(s.name || 'Fach'), color:safeColor(s.color), created:+s.created || Date.now()})));
+    await putMany('cards', cards);
+    await load(); toast(`Import fertig: ${cards.length} Karten`);
+    const target = [...new Set(cards.map(c => c.subjectId))];
+    go(target.length === 1 ? {name:'subject', id:target[0]} : {name:'home'});
   } catch (e) {
     closeSheet();
     toast(e && e.name === 'QuotaExceededError' ? 'Nicht genug Speicher für dieses Backup' : 'Diese Datei ist kein gültiges Karteikarten-Backup');
@@ -899,7 +1097,8 @@ const actions = {
   'new-card': () => { const id = state.view.id; state.draft = newDraft(id, ls.get('last-type') || 'basic'); go({name:'edit'}) },
   'cancel-edit': async () => {
     const d = state.draft, dirty = d.question.trim() || d.answer.trim() || d.qMedia.length || d.options.some(o => o.text.trim() || o.explanation.trim());
-    if (dirty && !(await ask({title:'Karte verwerfen?', text:'Was du eingegeben hast, geht verloren.', ok:'Verwerfen', danger:true}))) return;
+    if (d.convertFrom) { if (!(await ask({title:'Umwandlung abbrechen?', text:'Deine Karteikarte bleibt unverändert.', ok:'Abbrechen', danger:true}))) return }
+    else if (dirty && !(await ask({title:'Karte verwerfen?', text:'Was du eingegeben hast, geht verloren.', ok:'Verwerfen', danger:true}))) return;
     const sid = d.subjectId; state.draft = null; go({name:'subject', id:sid});
   },
   'set-type': el => { setType(el.dataset.t); ls.set('last-type', el.dataset.t) },
@@ -924,20 +1123,42 @@ const actions = {
     const r = mainEl.querySelector('.rate'); if (r) r.classList.remove('hide');
   },
   'pick': el => {
-    const cur = state.session.cur, c = cardById(cur.id), i = +el.dataset.i;
+    const cur = activeAnswer(), c = cardById(cur.id), i = +el.dataset.i;
     if (cur.checked) return;
     if (c.type === 'single') cur.sel = [i];
     else cur.sel = cur.sel.includes(i) ? cur.sel.filter(x => x !== i) : [...cur.sel, i];
     mainEl.querySelectorAll('.opt').forEach(b => b.classList.toggle('sel', cur.sel.includes(+b.dataset.i)));
     const chk = mainEl.querySelector('[data-action="check"]'); if (chk) chk.disabled = !cur.sel.length;
+    examDots();
   },
   'judge': el => {
-    const cur = state.session.cur, i = +el.dataset.i; if (cur.checked) return;
+    const cur = activeAnswer(), i = +el.dataset.i; if (cur.checked) return;
     cur.judge[i] = el.dataset.v === '1';
     el.parentNode.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', (p.dataset.v === '1') === cur.judge[i]));
     const chk = mainEl.querySelector('[data-action="check"]'); if (chk) chk.disabled = !cur.judge.every(x => x !== null);
+    examDots();
   },
   'check': () => checkAnswer(),
+  'convert': el => convertCard(el.dataset.id),
+  'exam-setup': () => examSetupSheet(state.view.id || (state.exam && state.exam.sid)),
+  'setup-type': el => { const t = el.dataset.t; if (setup.types.has(t)) { if (setup.types.size > 1) setup.types.delete(t) } else setup.types.add(t); examSetupSheet(setup.sid) },
+  'setup-count': el => { setup.count = +el.dataset.n; examSetupSheet(setup.sid) },
+  'exam-start': () => {
+    const ids = shuffle(cardsOf(setup.sid).filter(c => setup.types.has(c.type)).map(c => c.id));
+    closeSheet(); startExam(setup.sid, setup.count ? ids.slice(0, setup.count) : ids);
+  },
+  'exam-go': el => { state.exam.idx = +el.dataset.i; render(); window.scrollTo(0, 0) },
+  'exam-move': el => { const e = state.exam; e.idx = Math.max(0, Math.min(e.ids.length - 1, e.idx + +el.dataset.d)); render(); window.scrollTo(0, 0) },
+  'exam-reveal': () => { activeAnswer().flipped = true; render() },
+  'exam-self': el => { activeAnswer().self = el.dataset.v === '1'; render() },
+  'exam-submit': () => submitExam(),
+  'exam-cancel': async () => { if (await ask({title:'Prüfung abbrechen?', text:'Deine Antworten in dieser Prüfung gehen verloren.', ok:'Abbrechen', danger:true})) go({name:'subject', id:state.exam.sid}) },
+  'exam-retry': () => { const e = state.exam; startExam(e.sid, shuffle(e.ids.filter(id => e.results[id].score < 1))) },
+  'exam-filter': el => { state.exam.onlyWrong = el.dataset.w === '1'; render() },
+  'exam-jump': el => {
+    const e = state.exam; if (e.onlyWrong && e.results[el.dataset.id].score === 1) { e.onlyWrong = false; render() }
+    const t = document.getElementById('q-' + el.dataset.id); if (t) t.scrollIntoView({behavior:'smooth', block:'start'});
+  },
   'rate': el => rate(el.dataset.k === '1'),
   'view-img': el => { layer.innerHTML = `<div class="lightbox" data-action="close-layer"><img alt=""><button class="icon-btn" aria-label="Schliessen">${I.close}</button></div>`; const im = layer.querySelector('img'); im.src = el.src; im.alt = el.alt },
   'view-file': el => viewFile(el.dataset.id),
@@ -962,6 +1183,7 @@ document.addEventListener('submit', e => {
   if (e.target.dataset.form === 'subject') createSubject();
 });
 function onBind(e){
+  if (e.target.classList && e.target.classList.contains('grow-ta')) autoGrow(e.target);
   const b = e.target.dataset && e.target.dataset.bind; if (!b || !state.draft) return;
   const d = state.draft, v = e.target.value;
   if (b.startsWith('opt.')) { const [, i, k] = b.split('.'); d.options[+i][k] = v }

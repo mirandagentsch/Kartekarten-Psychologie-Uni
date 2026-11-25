@@ -14,8 +14,13 @@ INSTALLIEREN
 - Karten erst in der installierten App anlegen (eigener Speicher, getrennt von Safari).
 
 KARTEN ZWISCHEN GERÄTEN ÜBERTRAGEN
-- In der App oben rechts «Backup» → «Backup erstellen» → Datei teilen bzw. herunterladen.
-- Auf dem anderen Gerät: «Backup» → «Backup importieren» → Datei auswählen.
+- In der App oben rechts «Import» → «Backup erstellen» → Datei teilen bzw. herunterladen.
+- Auf dem anderen Gerät: «Import» → «Datei importieren» → Datei auswählen.
+
+FRAGEN VON CLAUDE IMPORTIEREN
+- Die .kartei-Datei von Claude auf dem Gerät sichern (z. B. in «Dateien»).
+- In der App oben rechts «Import» → «Datei importieren» → Datei auswählen.
+- Heisst das Fach gleich wie ein bestehendes Fach, landen die Karten dort.
 
 UPDATES
 - Geänderte Dateien wie in Schritt 4 erneut hochladen.
