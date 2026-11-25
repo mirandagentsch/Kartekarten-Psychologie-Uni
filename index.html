@@ -525,7 +525,7 @@ const del = (n, k, raw) => run(n, 'readwrite', s => s.delete(k)).then(r => { if 
 async function putMany(n, list, raw){ return run(n, 'readwrite', s => { list.forEach(v => s.put(raw ? v : stamp(n, v))) }) }
 
 /* ---------- Zustand ---------- */
-const state = { subjects:[], cards:[], lessons:[], stats:{id:'stats', days:{}}, remoteStats:{id:'remoteStats', map:{}}, tombs:[], device:'', sync:{status:'off', last:+ls.get('sync-last') || 0, err:''}, pendingReload:false, view:{name:'home'}, draft:null, session:null, err:'' };
+const state = { subjects:[], cards:[], lessons:[], stats:{id:'stats', days:{}}, remoteStats:{id:'remoteStats', map:{}}, resets:{id:'resets', all:0, s:{}, applied:{all:0, s:{}}, _d:0}, tombs:[], device:'', sync:{status:'off', last:+ls.get('sync-last') || 0, err:''}, pendingReload:false, view:{name:'home'}, draft:null, session:null, err:'' };
 const subj = id => state.subjects.find(s => s.id === id);
 const cardById = id => state.cards.find(c => c.id === id);
 const cardsOf = sid => state.cards.filter(c => c.subjectId === sid).sort((a,b) => a.created - b.created);
@@ -1166,12 +1166,20 @@ async function markAllDirty(){
     await putMany(n, list, true);
   }
   state.stats._d = 1;
+  if (state.resets.all || Object.keys(state.resets.s).length) state.resets._d = 1;
 }
 const mergeExams = (a = [], b = []) => [...a, ...b.filter(x => !a.some(y => y.at === x.at))].sort((x, y) => x.at - y.at).slice(-10);
 async function applyRemote(row){
   if (row.kind === 'stats') {
+    if (row.id === '_reset') {
+      const d = row.data || {}, rz = state.resets; let ch = false;
+      if ((+d.all || 0) > rz.all) { rz.all = +d.all; ch = true }
+      Object.entries(d.s || {}).forEach(([sid, ts]) => { if ((+ts || 0) > (rz.s[sid] || 0)) { rz.s[sid] = +ts; ch = true } });
+      if (!ch) return false;
+      applyResets(); await put('meta', rz, true); return true;
+    }
     if (row.id === state.device || !row.data || typeof row.data.days !== 'object') return false;
-    state.remoteStats.map[row.id] = row.data.days; await put('meta', state.remoteStats, true); return true;
+    state.remoteStats.map[row.id] = {days:row.data.days, at:+row.updated_at || 0}; await put('meta', state.remoteStats, true); return true;
   }
   const n = STORE_OF[row.kind]; if (!n) return false;
   const local = await get(n, row.id), ru = +row.updated_at || 0;
@@ -1187,10 +1195,15 @@ async function applyRemote(row){
   if (row.kind === 'media') v = {id:String(row.id), name:String(d.name || 'Datei'), type:String(d.type || 'application/octet-stream'), size:+d.size || 0, data: local ? local.data : null, _up:1};
   else if (row.kind === 'card') v = normCard({...d, id:row.id});
   else if (row.kind === 'lesson') v = normLesson({...d, id:row.id});
-  else v = {id:String(row.id), name:String(d.name || 'Fach'), color:safeColor(d.color), created:+d.created || Date.now(), exams:mergeExams(local && local.exams, Array.isArray(d.exams) ? d.exams.filter(x => x && +x.max > 0).map(x => ({at:+x.at || 0, pts:+x.pts || 0, max:+x.max})) : [])};
+  else {
+    const rAt = Math.max(+(local && local.examsResetAt) || 0, +d.examsResetAt || 0);
+    const rem = Array.isArray(d.exams) ? d.exams.filter(x => x && +x.max > 0).map(x => ({at:+x.at || 0, pts:+x.pts || 0, max:+x.max})) : [];
+    v = {id:String(row.id), name:String(d.name || 'Fach'), color:safeColor(d.color), created:+d.created || Date.now(), examsResetAt:rAt,
+      exams:mergeExams((local && local.exams || []).filter(x => x.at > rAt), rem.filter(x => x.at > rAt))};
+  }
   if (!v) return false;
   v._u = ru; v._d = 0;
-  if (row.kind === 'subject' && local && (local.exams || []).length > (Array.isArray(d.exams) ? d.exams.length : 0)) { v._d = 1; v._u = Math.max(ru, local._u || 0) + 1 }
+  if (row.kind === 'subject' && local && v.exams.length > (Array.isArray(d.exams) ? d.exams.filter(x => x && x.at > v.examsResetAt).length : 0)) { v._d = 1; v._u = Math.max(ru, local._u || 0) + 1 }
   await put(n, v, true);
   return true;
 }
@@ -1225,6 +1238,7 @@ async function pushAll(me){
   const tombs = state.tombs.slice();
   tombs.forEach(t => rows.push({row:{kind:t.kind, id:t.id, data:null, deleted:true, updated_at:t.at}, tomb:t}));
   if (state.stats._d) rows.push({row:{kind:'stats', id:state.device, data:{days:state.stats.days}, deleted:false, updated_at:Date.now()}, stats:true});
+  if (state.resets._d) rows.push({row:{kind:'stats', id:'_reset', data:{all:state.resets.all, s:state.resets.s}, deleted:false, updated_at:Date.now()}, resets:true});
   // in Paketen von höchstens ca. 1 MB senden
   let chunk = [], size = 0;
   const send = async () => {
@@ -1236,6 +1250,7 @@ async function pushAll(me){
         state.tombs = state.tombs.filter(t => t !== x.tomb);
         if (x.tomb.kind === 'media') sb(`/storage/v1/object/media/${me}/${encodeURIComponent(x.tomb.id)}`, {method:'DELETE'}).catch(() => {});
       } else if (x.stats) { state.stats._d = 0; await put('meta', state.stats, true) }
+      else if (x.resets) { state.resets._d = 0; await put('meta', state.resets, true) }
     }
     await put('meta', {id:'tombs', list:state.tombs}, true);
     chunk = []; size = 0;
@@ -1305,13 +1320,54 @@ function record(sid, list){
   statsSaving = statsSaving.then(() => put('meta', snap)).catch(() => {});
 }
 function allDays(){
-  const out = {}, add = days => Object.entries(days || {}).forEach(([k, d]) => {
-    const o = out[k] || (out[k] = {r:0, t:0, s:{}}); o.r += +d.r || 0; o.t += +d.t || 0;
-    Object.entries(d.s || {}).forEach(([sid, x]) => { const y = o.s[sid] || (o.s[sid] = {r:0, t:0}); y.r += +x.r || 0; y.t += +x.t || 0 });
+  const out = {}, rz = state.resets;
+  const add = (days, at) => Object.entries(days || {}).forEach(([k, d]) => {
+    if (at !== undefined && rz.all > at) return;
+    let r = +d.r || 0, t = +d.t || 0;
+    const ss = {};
+    Object.entries(d.s || {}).forEach(([sid, x]) => {
+      if (at !== undefined && (rz.s[sid] || 0) > at) { r -= +x.r || 0; t -= +x.t || 0; return }
+      ss[sid] = x;
+    });
+    if (t <= 0) return;
+    const o = out[k] || (out[k] = {r:0, t:0, s:{}}); o.r += r; o.t += t;
+    Object.entries(ss).forEach(([sid, x]) => { const y = o.s[sid] || (o.s[sid] = {r:0, t:0}); y.r += +x.r || 0; y.t += +x.t || 0 });
   });
   add(state.stats.days);
-  Object.entries(state.remoteStats.map).forEach(([did, days]) => { if (did !== state.device) add(days) });
+  Object.entries(state.remoteStats.map).forEach(([did, v]) => { if (did !== state.device && v && v.days) add(v.days, +v.at || 0) });
   return out;
+}
+function applyResets(){
+  const rz = state.resets, ap = rz.applied || (rz.applied = {all:0, s:{}});
+  let ch = false;
+  if (rz.all > ap.all) { state.stats.days = {}; ap.all = rz.all; ch = true }
+  Object.entries(rz.s).forEach(([sid, ts]) => {
+    if (ts <= (ap.s[sid] || 0)) return;
+    Object.entries(state.stats.days).forEach(([k, d]) => {
+      const x = d.s && d.s[sid]; if (!x) return;
+      d.r -= x.r; d.t -= x.t; delete d.s[sid]; if (d.t <= 0) delete state.stats.days[k];
+    });
+    ap.s[sid] = ts; ch = true;
+  });
+  if (ch) { state.stats._d = 1; put('meta', JSON.parse(JSON.stringify(state.stats)), true).catch(() => {}) }
+  return ch;
+}
+async function resetProgress(sid){
+  const sb = sid ? subj(sid) : null;
+  const ok = await ask({title: sb ? `Fortschritt in «${sb.name}» zurücksetzen?` : 'Gesamten Fortschritt zurücksetzen?',
+    text:`${sb ? 'Alle Karten dieses Fachs' : 'Alle Karten'} gelten wieder als neu. Erfolgsquote, Lerntage, abgeschlossene Lektionen und Prüfungsverlauf${sb ? ' dieses Fachs' : ''} werden gelöscht${syncReady() ? ', auch auf deinen anderen Geräten' : ''}. Karten und Lektionen bleiben erhalten. Das lässt sich nicht rückgängig machen.`,
+    ok:'Zurücksetzen', danger:true});
+  if (!ok) return;
+  const now = Date.now(), cs = state.cards.filter(c => !sid || c.subjectId === sid), lsn = state.lessons.filter(l => !sid || l.subjectId === sid), subs = state.subjects.filter(x => !sid || x.id === sid);
+  cs.forEach(c => { delete c.last; delete c.lastAt; c.stats = {known:0, again:0} });
+  lsn.forEach(l => { l.progress = null });
+  subs.forEach(x => { x.exams = []; x.examsResetAt = now });
+  try {
+    await putMany('cards', cs); await putMany('lessons', lsn); await putMany('subjects', subs);
+    if (sid) state.resets.s[sid] = now; else state.resets.all = now;
+    state.resets._d = 1; applyResets(); await put('meta', state.resets, true);
+    scheduleSync(300); toast('Fortschritt zurückgesetzt'); render();
+  } catch { toast('Zurücksetzen hat nicht geklappt') }
 }
 function progressOf(sid){
   const cs = cardsOf(sid), sure = cs.filter(c => c.last === 'known').length, prac = cs.filter(c => c.last === 'again').length;
@@ -1344,7 +1400,8 @@ function progressBlock(s){
     <div class="prog-more">
       <span>Erfolgsquote: <b>${q.t ? pct(q.r, q.t) + ' %' : 'noch keine Antworten'}</b>${q.t ? ` (${q.r} von ${q.t} Antworten richtig)` : ''}</span>
       ${ls.length ? `<span>Lektionen: <b>${done} von ${ls.length}</b> abgeschlossen</span>` : ''}
-      ${ex.length ? `<span>Letzte Prüfungen: ${ex.map(x => `<b>${pct(x.pts, x.max)} %</b> am ${fmtDate(x.at)}`).join(' · ')}</span>` : ''}</div></div>`;
+      ${ex.length ? `<span>Letzte Prüfungen: ${ex.map(x => `<b>${pct(x.pts, x.max)} %</b> am ${fmtDate(x.at)}`).join(' · ')}</span>` : ''}</div>
+    <button class="link-btn" data-action="reset-progress" data-id="${esc(s.id)}" style="justify-self:start;color:var(--muted)">Fortschritt dieses Fachs zurücksetzen</button></div>`;
 }
 function viewStats(){
   barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="home">${I.back}Fächer</button><div class="bar-title center">Statistik</div><div style="width:92px"></div></div>`;
@@ -1375,6 +1432,7 @@ function viewStats(){
     ${exams.length ? `<section class="card-box"><h2>Prüfungsverlauf</h2>
       <div class="trend">${exams.map(x => `<i style="height:${Math.max(4, pct(x.pts, x.max))}%" title="${esc(x.name)}: ${pct(x.pts, x.max)} % am ${fmtDate(x.at)}"></i>`).join('')}</div>
       <p class="note">Letzte ${exams.length} ${exams.length === 1 ? 'Prüfung' : 'Prüfungen'}, älteste links. Zuletzt: ${pct(exams[exams.length - 1].pts, exams[exams.length - 1].max)} % (${esc(exams[exams.length - 1].name)}).</p></section>` : ''}
+    <button class="btn danger wide" data-action="reset-progress" style="margin:6px 0 14px">Gesamten Fortschritt zurücksetzen</button>
     <p class="note">Die Statistik zählt Antworten im Lernmodus, in Prüfungen und in Lektionen${syncReady() ? ' auf all deinen angemeldeten Geräten' : ' auf diesem Gerät'}.</p>`;
 }
 
@@ -1732,7 +1790,8 @@ async function importBackup(file){
       const ex = Array.isArray(s.exams) ? s.exams.filter(x => x && +x.max > 0).map(x => ({at:+x.at || 0, pts:+x.pts || 0, max:+x.max})).slice(-10) : [];
       const old = state.subjects.find(x => x.id === String(s.id));
       const merged = old ? [...(old.exams || []), ...ex.filter(x => !(old.exams || []).some(y => y.at === x.at))].sort((a, b) => a.at - b.at).slice(-10) : ex;
-      return {id:String(s.id), name:String(s.name || 'Fach'), color:safeColor(s.color), created:+s.created || Date.now(), exams:merged};
+      const rAt = Math.max(+(old && old.examsResetAt) || 0, +s.examsResetAt || 0);
+      return {id:String(s.id), name:String(s.name || 'Fach'), color:safeColor(s.color), created:+s.created || Date.now(), examsResetAt:rAt, exams:merged.filter(x => x.at > rAt)};
     }));
     await putMany('cards', cards);
     await putMany('lessons', lessons);
@@ -1813,6 +1872,7 @@ const actions = {
   'check': () => state.view.name === 'lesson' ? lessonCheck() : checkAnswer(),
   'convert': el => convertCard(el.dataset.id),
   'stats': () => go({name:'stats'}),
+  'reset-progress': el => resetProgress(el.dataset.id || null),
   'account': () => accountSheet(),
   'account-mode': el => accountSheet(el.dataset.m),
   'sync-now': () => { setSync('busy'); sync() },
@@ -1915,6 +1975,7 @@ async function load(){
   state.lessons = (await all('lessons')).sort((a, b) => a.created - b.created);
   const st = await get('meta', 'stats'); state.stats = st && st.days ? st : {id:'stats', days:{}};
   const rs = await get('meta', 'remoteStats'); state.remoteStats = rs && rs.map ? rs : {id:'remoteStats', map:{}};
+  const rz = await get('meta', 'resets'); state.resets = rz && rz.s ? rz : {id:'resets', all:0, s:{}, applied:{all:0, s:{}}, _d:0};
   const tb = await get('meta', 'tombs'); state.tombs = tb && Array.isArray(tb.list) ? tb.list : [];
   let dv = await get('meta', 'device'); if (!dv) { dv = {id:'device', did:uid()}; await put('meta', dv, true) } state.device = dv.did;
 }
