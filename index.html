@@ -309,6 +309,70 @@ input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var
 .link-btn svg{width:16px;height:16px}
 .info{background:var(--accent-soft);border-radius:14px;padding:12px 14px;font-size:15px}
 
+/* Fortschritt */
+.prog{display:grid;gap:10px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+.prog-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.prog-top b{font-family:var(--round)}
+.prog-top span{color:var(--muted);font-size:14px}
+.pbar{display:flex;height:12px;border-radius:99px;background:var(--line);overflow:hidden}
+.pbar i{display:block;height:100%}
+.pbar .sure,.legend .sure{background:var(--good)}
+.pbar .prac,.legend .prac{background:#F0A23A}
+.legend .neu{background:var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.prog-more{font-size:14px;color:var(--muted);display:grid;gap:2px}
+.prog-more b{color:var(--ink);font-weight:600}
+.tile-bar{position:relative;display:block;height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:8px}
+.tile-bar i{display:block;height:100%;background:var(--good);border-radius:99px}
+
+/* Statistik */
+.statbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin-bottom:22px;text-align:left;border:0;width:100%}
+.statbar div{display:grid;gap:2px}
+.statbar b{font-family:var(--round);font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.statbar span{color:var(--muted);font-size:13px}
+.statbar .more{grid-column:1/-1;color:var(--accent);font-weight:600;font-size:14px}
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:end;height:150px;padding-top:8px}
+.week .col{display:grid;grid-template-rows:1fr auto auto;gap:4px;height:100%;text-align:center}
+.week .bar{align-self:end;border-radius:8px 8px 4px 4px;background:var(--accent-soft);position:relative;overflow:hidden;min-height:4px}
+.week .bar i{position:absolute;left:0;right:0;bottom:0;background:var(--accent);border-radius:inherit}
+.week small{color:var(--muted);font-size:12px}
+.week b{font-size:12px;font-variant-numeric:tabular-nums}
+.card-box{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;display:grid;gap:12px;margin-bottom:18px}
+.card-box h2{font-size:18px}
+table.subj{width:100%;border-collapse:collapse;font-size:15px}
+table.subj th{text-align:left;font-size:13px;color:var(--muted);font-weight:600;padding:6px 8px 6px 0;border-bottom:1px solid var(--line)}
+table.subj td{padding:10px 8px 10px 0;border-bottom:1px solid var(--line);vertical-align:middle}
+table.subj td.n,table.subj th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.subj tr:last-child td{border-bottom:0}
+.trend{display:flex;align-items:end;gap:6px;height:70px}
+.trend i{flex:1;max-width:36px;border-radius:6px 6px 3px 3px;background:var(--accent)}
+.note{font-size:13px;color:var(--muted)}
+
+/* Lektionen */
+.lrow{padding:0 6px 0 0}
+.lrow-main{flex:1;text-align:left;border:0;background:none;padding:12px 6px 12px 16px;min-height:64px}
+.tag.t-lesson{background:color-mix(in srgb,#E0589A 14%,var(--surface));color:color-mix(in srgb,#C2367A 85%,var(--ink));border-color:transparent}
+.tag.t-done{background:var(--good-soft);color:var(--good);border-color:transparent}
+.section-h .btn{min-height:40px;padding:0 14px;font-size:15px}
+.lesson-title{margin:4px 0 18px}
+.lsteps{display:grid;gap:18px}
+.lstep{animation:up .3s ease}
+.lstep.text{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:22px 22px 20px;display:grid;gap:12px}
+.lstep.text h3{font-size:20px}
+.prose{font-size:17px;line-height:1.65;overflow-wrap:anywhere}
+.prose p{margin:0 0 12px}.prose p:last-child{margin-bottom:0}
+.prose ul{margin:0 0 12px;padding-left:22px}.prose li{margin:4px 0}
+.prose h4{font-family:var(--round);font-size:17px;margin:14px 0 6px}
+.lnext{margin-top:4px}
+.lblock{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:12px}
+.lblock-head{display:flex;align-items:center;gap:4px}
+.lblock-head .spacer{flex:1}
+.lblock-head .icon-btn{width:40px;height:40px}
+.add-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fmt-hint{font-size:13px;color:var(--muted)}
+
 /* Abschluss */
 .done{display:grid;justify-items:center;text-align:center;gap:16px;padding:24px 0}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;width:100%;margin:8px 0}
@@ -389,7 +453,7 @@ const L = {
     stmtTrue:'Die Aussage ist richtig', stmtFalse:'Die Aussage ist falsch', noExpl:'Zu dieser Option ist keine Erklärung hinterlegt.',
     of:'von', correctJudged:'richtig beurteilt', point:'Punkt', points:'Punkte', yourPick:'deine Wahl', correctLbl:'richtig', wrongLbl:'falsch',
     basic:'Karteikarte', single:'Single Choice', multi:'Multiple Choice', kprim:'K-prim', dec:',',
-    reveal:'Antwort aufdecken', selfQ:'Hast du es gewusst?', selfYes:'Gewusst', selfNo:'Nicht gewusst', selfTag:'Selbstbewertung', unanswered:'Nicht beantwortet'},
+    reveal:'Antwort aufdecken', next:'Weiter', finish:'Lektion abschliessen', lessonDone:'Lektion abgeschlossen',  selfQ:'Hast du es gewusst?', selfYes:'Gewusst', selfNo:'Nicht gewusst', selfTag:'Selbstbewertung', unanswered:'Nicht beantwortet'},
   en:{question:'Question', answer:'Answer', tap:'Tap or click to flip', tapBack:'Tap again to return to the question', known:'Got it', again:'Practise again',
     check:'Check answer', chooseOne:'Choose one answer', chooseMany:'Choose all correct answers', judgeAll:'Judge each statement',
     t:'true', f:'false', right:'Correct', wrong:'Incorrect', allRight:'Correct!', notRight:'Not correct', partly:'Not quite',
@@ -397,7 +461,7 @@ const L = {
     stmtTrue:'The statement is true', stmtFalse:'The statement is false', noExpl:'No explanation has been added for this option.',
     of:'of', correctJudged:'judged correctly', point:'point', points:'points', yourPick:'your choice', correctLbl:'correct', wrongLbl:'incorrect',
     basic:'Flashcard', single:'Single choice', multi:'Multiple choice', kprim:'K-prim', dec:'.',
-    reveal:'Reveal answer', selfQ:'Did you know it?', selfYes:'Knew it', selfNo:'Did not know', selfTag:'Self-assessment', unanswered:'Not answered'}
+    reveal:'Reveal answer', next:'Continue', finish:'Finish lesson', lessonDone:'Lesson completed',  selfQ:'Did you know it?', selfYes:'Knew it', selfNo:'Did not know', selfTag:'Self-assessment', unanswered:'Not answered'}
 };
 const num = (n, lang) => String(n).replace('.', L[lang].dec);
 
@@ -411,6 +475,9 @@ const I = {
   flip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0115.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 01-15.5 6.2L3 16M3 21v-5h5"/></svg>',
   close:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   box:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10l6 6 6-6"/></svg>',
   share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 8l5-5 5 5M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>'
 };
 
@@ -418,9 +485,9 @@ const I = {
 let dbPromise;
 function db(){
   if (!dbPromise) dbPromise = new Promise((res, rej) => {
-    const r = indexedDB.open('karteikarten', 1);
+    const r = indexedDB.open('karteikarten', 2);
     r.onupgradeneeded = () => { const d = r.result;
-      ['subjects','cards','media'].forEach(n => { if (!d.objectStoreNames.contains(n)) d.createObjectStore(n, {keyPath:'id'}) }); };
+      ['subjects','cards','media','lessons','meta'].forEach(n => { if (!d.objectStoreNames.contains(n)) d.createObjectStore(n, {keyPath:'id'}) }); };
     r.onsuccess = () => res(r.result);
     r.onerror = () => rej(r.error);
   });
@@ -444,7 +511,7 @@ const del = (n, k) => run(n, 'readwrite', s => s.delete(k));
 async function putMany(n, list){ return run(n, 'readwrite', s => { list.forEach(v => s.put(v)) }) }
 
 /* ---------- Zustand ---------- */
-const state = { subjects:[], cards:[], view:{name:'home'}, draft:null, session:null, err:'' };
+const state = { subjects:[], cards:[], lessons:[], stats:{id:'stats', days:{}}, view:{name:'home'}, draft:null, session:null, err:'' };
 const subj = id => state.subjects.find(s => s.id === id);
 const cardById = id => state.cards.find(c => c.id === id);
 const cardsOf = sid => state.cards.filter(c => c.subjectId === sid).sort((a,b) => a.created - b.created);
@@ -513,7 +580,8 @@ function go(view){ state.view = view; state.err = ''; render(); window.scrollTo(
 /* ---------- Ansichten ---------- */
 function render(){
   const v = state.view.name;
-  ({home:viewHome, subject:viewSubject, edit:viewEdit, learn:viewLearn, done:viewDone, exam:viewExam, 'exam-result':viewExamResult})[v]();
+  ({home:viewHome, subject:viewSubject, edit:viewEdit, learn:viewLearn, done:viewDone, exam:viewExam, 'exam-result':viewExamResult,
+    lesson:viewLesson, 'lesson-edit':viewLessonEdit, stats:viewStats})[v]();
   hydrate(mainEl);
 }
 
@@ -540,12 +608,19 @@ function viewHome(){
     return;
   }
   const total = state.cards.length;
-  mainEl.innerHTML = installHint() + `<div class="intro"><div><h1>Deine Fächer</h1>
+  const ov = overall();
+  mainEl.innerHTML = installHint() + `${ov.total || ov.cards ? `<button class="statbar" data-action="stats">
+      <div><b>${ov.cards ? pct(ov.sure, ov.cards) : 0} %</b><span>Karten sicher</span></div>
+      <div><b>${ov.total ? pct(ov.right, ov.total) + ' %' : '–'}</b><span>Erfolgsquote</span></div>
+      <div><b>${ov.streak}</b><span>${ov.streak === 1 ? 'Tag' : 'Tage'} in Folge</span></div>
+      <span class="more">Statistik ansehen ›</span></button>` : ''}
+    <div class="intro"><div><h1>Deine Fächer</h1>
       <p>${s.length} ${s.length === 1 ? 'Fach' : 'Fächer'} · ${total} ${total === 1 ? 'Karte' : 'Karten'}</p></div></div>
     <div class="subjects">${s.map(x => { const n = cardsOf(x.id).length; return `
       <button class="tile" data-action="open-subject" data-id="${esc(x.id)}" style="--c:${safeColor(x.color)}">
         <span class="under2"></span><span class="under"></span>
-        <span class="paper"><span class="tile-name">${esc(x.name)}</span><span class="tile-meta"><b>${n}</b> ${n === 1 ? 'Karte' : 'Karten'}</span></span>
+        <span class="paper"><span class="tile-name">${esc(x.name)}</span><span class="tile-meta"><b>${n}</b> ${n === 1 ? 'Karte' : 'Karten'}${n ? ` · ${pct(progressOf(x.id).sure, n)} % sicher` : ''}${lessonsOf(x.id).length ? ` · ${lessonsOf(x.id).length} ${lessonsOf(x.id).length === 1 ? 'Lektion' : 'Lektionen'}` : ''}
+          ${n ? `<span class="tile-bar"><i style="width:${pct(progressOf(x.id).sure, n)}%"></i></span>` : ''}</span></span>
       </button>` }).join('')}
       <button class="tile add" data-action="new-subject"><span class="paper">${I.plus}Neues Fach</span></button>
     </div>`;
@@ -564,7 +639,10 @@ function viewSubject(){
         <button class="btn primary" data-action="learn" ${cs.length ? '' : 'disabled'}>Lernen starten</button>
         <button class="btn" data-action="exam-setup" ${cs.length ? '' : 'disabled'}>Prüfung starten</button>
         <button class="btn" data-action="new-card">${I.plus}Neue Karte</button>
-      </div></section>
+      </div>${progressBlock(s)}</section>
+    <div class="section-h"><h2>Lektionen</h2><button class="btn" data-action="lesson-new">${I.plus}Neue Lektion</button></div>
+    ${lessonsOf(s.id).length ? `<ul class="clist" style="margin-bottom:28px">${lessonsOf(s.id).map(lessonRow).join('')}</ul>`
+      : `<p class="muted small" style="margin:0 0 28px">Lektionen verbinden Theorie mit Fragen: Text lesen, Frage lösen, weiterlesen. Schreib selbst eine oder importiere eine von Claude.</p>`}
     <div class="section-h"><h2>Karten</h2><span>${cs.length}</span></div>
     ${cs.length ? `<ul class="clist">${cs.map(cardRow).join('')}</ul>`
       : `<div class="empty" style="padding:24px 12px"><p>Hier erscheinen deine Karten. Tippe auf «Neue Karte», um die erste anzulegen.</p></div>`}`;
@@ -590,13 +668,13 @@ function newDraft(subjectId, type, lang){
 const previews = new WeakMap();
 const previewURL = f => { if (!previews.has(f)) previews.set(f, URL.createObjectURL(f)); return previews.get(f) };
 function draftMedia(key){ const d = state.draft; return key === 'q' ? d.qMedia : key === 'a' ? d.aMedia : d.options[+key.slice(1)].media }
-function mediaEditor(key, label){
-  const list = draftMedia(key);
+function mediaEditor(key, label, scope){
+  const list = scope === 'l' ? lessonMedia(key) : draftMedia(key);
   return `<div class="att-list">${list.map((f, i) => `<span class="att">
       ${f.type && f.type.startsWith('image/') ? (f instanceof Blob ? `<img src="${previewURL(f)}" alt="">` : `<img data-thumb="${esc(f.id)}" alt="">`) : `<span class="fi">${I.file}</span>`}
       <span class="att-name">${esc(f.name || 'Datei')}</span>
-      <button type="button" class="att-x" data-action="rm-media" data-key="${key}" data-i="${i}" aria-label="Anhang entfernen">×</button></span>`).join('')}
-    <label class="att-add">${I.clip}${label}<input type="file" multiple class="vh" data-media="${key}"></label></div>`;
+      <button type="button" class="att-x" data-action="rm-media" data-key="${key}" data-scope="${scope || ''}" data-i="${i}" aria-label="Anhang entfernen">×</button></span>`).join('')}
+    <label class="att-add">${I.clip}${label}<input type="file" multiple class="vh" ${scope === 'l' ? 'data-lmedia' : 'data-media'}="${key}"></label></div>`;
 }
 function viewEdit(){
   const d = state.draft, s = subj(d.subjectId);
@@ -641,7 +719,10 @@ function viewEdit(){
 }
 function setType(t){
   const d = state.draft, from = d.type; if (t === from) return;
-  let o = d.options.map(x => ({...x}));
+  d.options = convertOptions(d.options, from, t); d.type = t; state.err = ''; render();
+}
+function convertOptions(opts, from, t){
+  let o = opts.map(x => ({...x}));
   if (t === 'kprim') {
     while (o.length < 4) o.push(blankOpt());
     o = o.slice(0, 4);
@@ -650,7 +731,7 @@ function setType(t){
     o.forEach(x => x.correct = x.correct === true);
   }
   if (t === 'single' && o.filter(x => x.correct).length > 1) o.forEach(x => x.correct = false);
-  d.options = o; d.type = t; state.err = ''; render();
+  return o;
 }
 function validate(d){
   if (!d.question.trim() && !d.qMedia.length) return 'Bitte schreibe eine Frage.';
@@ -663,22 +744,23 @@ function validate(d){
   return '';
 }
 let saving = false;
+async function storeMedia(list, created){
+  const out = [];
+  for (const f of list) {
+    if (!(f instanceof Blob)) { out.push({id:String(f.id), name:String(f.name || 'Datei'), type:String(f.type || 'application/octet-stream')}); continue }
+    const id = uid(), type = f.type || 'application/octet-stream', name = f.name || 'Datei';
+    await put('media', {id, name, type, size:f.size, data: await f.arrayBuffer()});
+    created.push(id); out.push({id, name, type});
+  }
+  return out;
+}
 async function saveDraft(again){
   if (saving) return;
   const d = state.draft, e = validate(d);
   if (e) { state.err = e; render(); const el = mainEl.querySelector('.err'); el && el.scrollIntoView({block:'center', behavior:'smooth'}); return }
   saving = true;
   const created = [];
-  const storeFiles = async list => {
-    const out = [];
-    for (const f of list) {
-      if (!(f instanceof Blob)) { out.push({id:String(f.id), name:String(f.name || 'Datei'), type:String(f.type || 'application/octet-stream')}); continue }
-      const id = uid(), type = f.type || 'application/octet-stream', name = f.name || 'Datei';
-      await put('media', {id, name, type, size:f.size, data: await f.arrayBuffer()});
-      created.push(id); out.push({id, name, type});
-    }
-    return out;
-  };
+  const storeFiles = list => storeMedia(list, created);
   try {
     const orig = d.convertFrom ? cardById(d.convertFrom) : null;
     const c = {id: orig ? orig.id : uid(), subjectId:d.subjectId, type:d.type, lang:d.lang, question:d.question.trim(), qMedia: await storeFiles(d.qMedia),
@@ -810,6 +892,8 @@ function checkAnswer(){
 async function rate(known){
   const s = state.session, id = s.queue.shift(), c = cardById(id);
   c.stats = c.stats || {known:0, again:0};
+  c.last = known ? 'known' : 'again'; c.lastAt = Date.now();
+  record(c.subjectId, [known]);
   if (known) { s.known++; s.done++; c.stats.known++ }
   else { s.again++; c.stats.again++; s.queue.splice(Math.min(3, s.queue.length), 0, id) }
   put('cards', c).catch(() => {});
@@ -848,16 +932,18 @@ function examSetupSheet(sid){
     <div class="sheet-actions"><button class="btn" data-action="sheet-no">Abbrechen</button>
       <button class="btn primary" data-action="exam-start" ${n ? '' : 'disabled'}>Los (${setup.count && setup.count < n ? setup.count : n} Fragen)</button></div>`);
 }
-function startExam(sid, ids){
+function startExam(sid, ids, retry){
   if (!ids.length) return;
   const answers = {};
   ids.forEach(id => answers[id] = {id, sel:[], judge:[null, null, null, null], flipped:false, self:null, checked:false});
-  state.exam = {sid, ids, idx:0, answers, results:null, onlyWrong:false};
+  state.exam = {sid, ids, idx:0, answers, results:null, onlyWrong:false, retry:!!retry};
   go({name:'exam'});
 }
-function activeAnswer(){
-  if (state.view.name === 'exam') { const e = state.exam; return e.answers[e.ids[e.idx]] }
-  return state.session.cur;
+function activeAnswer(){ return activeQ().a }
+function activeQ(){
+  if (state.view.name === 'exam') { const e = state.exam, id = e.ids[e.idx]; return {a:e.answers[id], c:cardById(id)} }
+  if (state.view.name === 'lesson') { const lp = state.lp, b = lessonById(lp.id).blocks[lp.step]; return {a:lp.answers[b.id], c:b} }
+  return {a:state.session.cur, c:cardById(state.session.cur.id)};
 }
 function examDots(){
   if (state.view.name !== 'exam') return;
@@ -900,7 +986,15 @@ async function submitExam(){
   const e = state.exam, open = e.ids.filter(id => !isAnswered(cardById(id), e.answers[id])).length;
   if (open && !(await ask({title:'Prüfung abgeben?', text:`${open} ${open === 1 ? 'Frage ist' : 'Fragen sind'} noch unbeantwortet und ${open === 1 ? 'zählt' : 'zählen'} 0 Punkte.`, ok:'Abgeben'}))) return;
   e.results = {};
-  e.ids.forEach(id => { const a = e.answers[id]; a.checked = true; e.results[id] = scoreOf(cardById(id), a) });
+  const changed = [];
+  e.ids.forEach(id => { const a = e.answers[id], c = cardById(id); a.checked = true; e.results[id] = scoreOf(c, a);
+    c.last = e.results[id].score === 1 ? 'known' : 'again'; c.lastAt = Date.now(); changed.push(c) });
+  putMany('cards', changed).catch(() => {});
+  record(e.sid, e.ids.map(id => e.results[id].score === 1));
+  if (!e.retry) {
+    const sb = subj(e.sid);
+    if (sb) { sb.exams = [...(sb.exams || []), {at:Date.now(), pts:e.ids.reduce((n, id) => n + e.results[id].score, 0), max:e.ids.length}].slice(-10); put('subjects', sb).catch(() => {}) }
+  }
   go({name:'exam-result'});
 }
 function viewExamResult(){
@@ -927,6 +1021,260 @@ function reviewCard(id, i){
   return `<article class="qcard" id="q-${esc(id)}" lang="${lang}"><div class="qnum"><b>Frage ${i + 1}</b><span class="ptag ${cls}">${num(r.score, 'de')} ${r.score === 1 ? 'Punkt' : 'Punkte'}</span></div>
     ${questionHead(c, T)}${unans}
     ${c.type === 'basic' ? basicExamBody(c, a, T, true) : choiceInner(c, a, true, r, T)}</article>`;
+}
+
+/* ---------- Fortschritt und Statistik ---------- */
+const dayKey = (t = Date.now()) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` };
+let statsSaving = Promise.resolve();
+function record(sid, list){
+  if (!list.length) return;
+  const k = dayKey(), d = state.stats.days[k] || (state.stats.days[k] = {r:0, t:0, s:{}});
+  const ss = d.s[sid] || (d.s[sid] = {r:0, t:0});
+  list.forEach(ok => { d.t++; ss.t++; if (ok) { d.r++; ss.r++ } });
+  const snap = JSON.parse(JSON.stringify(state.stats));
+  statsSaving = statsSaving.then(() => put('meta', snap)).catch(() => {});
+}
+function progressOf(sid){
+  const cs = cardsOf(sid), sure = cs.filter(c => c.last === 'known').length, prac = cs.filter(c => c.last === 'again').length;
+  return {total:cs.length, sure, prac, neu:cs.length - sure - prac};
+}
+function quoteOf(sid){
+  let r = 0, t = 0;
+  Object.values(state.stats.days).forEach(d => { const x = sid ? d.s && d.s[sid] : d; if (x) { r += x.r; t += x.t } });
+  return {r, t};
+}
+function streak(){
+  let n = 0, t = Date.now();
+  if (!state.stats.days[dayKey(t)]) t -= 864e5;
+  while (state.stats.days[dayKey(t)]) { n++; t -= 864e5 }
+  return n;
+}
+function overall(){
+  const cards = state.cards.length, sure = state.cards.filter(c => c.last === 'known').length, prac = state.cards.filter(c => c.last === 'again').length;
+  const q = quoteOf();
+  return {cards, sure, prac, neu:cards - sure - prac, right:q.r, total:q.t, streak:streak()};
+}
+const fmtDate = t => { const d = new Date(t); return `${d.getDate()}.${d.getMonth() + 1}.` };
+function progressBlock(s){
+  const p = progressOf(s.id), q = quoteOf(s.id), ls = lessonsOf(s.id), done = ls.filter(l => l.progress && l.progress.done).length, ex = (s.exams || []).slice(-3).reverse();
+  if (!p.total && !ls.length) return '';
+  return `<div class="prog"><div class="prog-top"><b>Fortschritt</b><span>${p.total ? pct(p.sure, p.total) : 0} % sicher</span></div>
+    <div class="pbar" role="img" aria-label="${p.sure} sicher, ${p.prac} am Üben, ${p.neu} neu"><i class="sure" style="width:${p.total ? p.sure / p.total * 100 : 0}%"></i><i class="prac" style="width:${p.total ? p.prac / p.total * 100 : 0}%"></i></div>
+    <div class="legend"><span><i class="sure"></i>${p.sure} sicher</span><span><i class="prac"></i>${p.prac} am Üben</span><span><i class="neu"></i>${p.neu} neu</span></div>
+    <div class="prog-more">
+      <span>Erfolgsquote: <b>${q.t ? pct(q.r, q.t) + ' %' : 'noch keine Antworten'}</b>${q.t ? ` (${q.r} von ${q.t} Antworten richtig)` : ''}</span>
+      ${ls.length ? `<span>Lektionen: <b>${done} von ${ls.length}</b> abgeschlossen</span>` : ''}
+      ${ex.length ? `<span>Letzte Prüfungen: ${ex.map(x => `<b>${pct(x.pts, x.max)} %</b> am ${fmtDate(x.at)}`).join(' · ')}</span>` : ''}</div></div>`;
+}
+function viewStats(){
+  barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="home">${I.back}Fächer</button><div class="bar-title center">Statistik</div><div style="width:92px"></div></div>`;
+  const ov = overall(), days = [];
+  for (let i = 6; i >= 0; i--) { const ts = Date.now() - i * 864e5, d = state.stats.days[dayKey(ts)] || {r:0, t:0}; days.push({ts, r:d.r, t:d.t}) }
+  const maxT = Math.max(1, ...days.map(d => d.t)), wk = days.reduce((a, d) => ({r:a.r + d.r, t:a.t + d.t}), {r:0, t:0});
+  const WD = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+  const exams = state.subjects.flatMap(s => (s.exams || []).map(x => ({...x, name:s.name}))).sort((a, b) => a.at - b.at).slice(-10);
+  mainEl.innerHTML = `
+    <div class="statbar" style="cursor:default">
+      <div><b>${ov.cards ? pct(ov.sure, ov.cards) : 0} %</b><span>Karten sicher</span></div>
+      <div><b>${ov.total ? pct(ov.right, ov.total) + ' %' : '–'}</b><span>Erfolgsquote gesamt</span></div>
+      <div><b>${ov.streak}</b><span>${ov.streak === 1 ? 'Tag' : 'Tage'} in Folge</span></div></div>
+    <section class="card-box"><h2>Gesamtfortschritt</h2>
+      <div class="pbar"><i class="sure" style="width:${ov.cards ? ov.sure / ov.cards * 100 : 0}%"></i><i class="prac" style="width:${ov.cards ? ov.prac / ov.cards * 100 : 0}%"></i></div>
+      <div class="legend"><span><i class="sure"></i>${ov.sure} sicher</span><span><i class="prac"></i>${ov.prac} am Üben</span><span><i class="neu"></i>${ov.neu} neu</span></div>
+      <p class="note">«Sicher» heisst: Bei der letzten Abfrage gewusst bzw. voll richtig. «Am Üben»: zuletzt falsch oder «Nochmal üben».</p></section>
+    <section class="card-box"><h2>Letzte 7 Tage</h2>
+      <p class="muted small">${wk.t} ${wk.t === 1 ? 'Antwort' : 'Antworten'}${wk.t ? ` · Erfolgsquote ${pct(wk.r, wk.t)} %` : ''}</p>
+      <div class="week">${days.map(d => `<div class="col"><div class="bar" style="height:${Math.max(4, d.t / maxT * 100)}%" title="${d.r} von ${d.t} richtig"><i style="height:${d.t ? d.r / d.t * 100 : 0}%"></i></div>
+        <b>${d.t || ''}</b><small>${WD[new Date(d.ts).getDay()]}</small></div>`).join('')}</div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>richtig</span><span><i style="background:var(--accent-soft)"></i>falsch</span></div></section>
+    <section class="card-box"><h2>Nach Fach</h2>
+      ${state.subjects.length ? `<table class="subj"><thead><tr><th>Fach</th><th class="n">sicher</th><th class="n">Quote</th><th class="n">Prüfung</th></tr></thead><tbody>
+      ${state.subjects.map(s => { const p = progressOf(s.id), q = quoteOf(s.id), ex = (s.exams || []).slice(-1)[0];
+        return `<tr data-action="open-subject" data-id="${esc(s.id)}" style="cursor:pointer"><td><span class="dot" style="--c:${safeColor(s.color)};display:inline-block;margin-right:8px"></span>${esc(s.name)}</td>
+        <td class="n">${p.total ? pct(p.sure, p.total) + ' %' : '–'}</td><td class="n">${q.t ? pct(q.r, q.t) + ' %' : '–'}</td><td class="n">${ex ? pct(ex.pts, ex.max) + ' %' : '–'}</td></tr>` }).join('')}</tbody></table>` : '<p class="muted">Noch keine Fächer.</p>'}</section>
+    ${exams.length ? `<section class="card-box"><h2>Prüfungsverlauf</h2>
+      <div class="trend">${exams.map(x => `<i style="height:${Math.max(4, pct(x.pts, x.max))}%" title="${esc(x.name)}: ${pct(x.pts, x.max)} % am ${fmtDate(x.at)}"></i>`).join('')}</div>
+      <p class="note">Letzte ${exams.length} ${exams.length === 1 ? 'Prüfung' : 'Prüfungen'}, älteste links. Zuletzt: ${pct(exams[exams.length - 1].pts, exams[exams.length - 1].max)} % (${esc(exams[exams.length - 1].name)}).</p></section>` : ''}
+    <p class="note">Die Statistik zählt Antworten im Lernmodus, in Prüfungen und in Lektionen auf diesem Gerät. Über «Import» → «Backup» überträgst du sie mit.</p>`;
+}
+
+/* ---------- Lektionen ---------- */
+const lessonsOf = sid => state.lessons.filter(l => l.subjectId === sid).sort((a, b) => a.created - b.created);
+const lessonById = id => state.lessons.find(l => l.id === id);
+const inlineMd = t => t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+function md(text){
+  let out = '', list = false, para = [];
+  const flush = () => { if (para.length) { out += `<p>${para.join('<br>')}</p>`; para = [] } };
+  for (const raw of esc(text).split('\n')) {
+    const l = raw.trimEnd();
+    if (/^\s*[-•*]\s+/.test(l)) { flush(); if (!list) { out += '<ul>'; list = true } out += `<li>${inlineMd(l.replace(/^\s*[-•*]\s+/, ''))}</li>`; continue }
+    if (list) { out += '</ul>'; list = false }
+    if (/^#{1,3}\s+/.test(l)) { flush(); out += `<h4>${inlineMd(l.replace(/^#{1,3}\s+/, ''))}</h4>`; continue }
+    if (!l.trim()) { flush(); continue }
+    para.push(inlineMd(l));
+  }
+  flush(); if (list) out += '</ul>';
+  return out;
+}
+function lessonRow(l){
+  const nq = l.blocks.filter(b => b.kind === 'question').length, nt = l.blocks.length - nq, pr = l.progress;
+  return `<li class="crow lrow"><button class="lrow-main" data-action="lesson-open" data-id="${esc(l.id)}">
+      <div class="crow-tags"><span class="tag t-lesson">Lektion</span><span class="tag">${l.lang === 'en' ? 'EN' : 'DE'}</span>
+      ${pr && pr.done ? `<span class="tag t-done">abgeschlossen${pr.max ? ` · ${num(Math.round(pr.pts * 10) / 10, 'de')}/${pr.max}` : ''}</span>` : ''}</div>
+      <div class="crow-q"><b>${esc(l.title)}</b></div><div class="small muted">${nt} ${nt === 1 ? 'Textabschnitt' : 'Textabschnitte'} · ${nq} ${nq === 1 ? 'Frage' : 'Fragen'}</div></button>
+    <button class="icon-btn" data-action="lesson-edit" data-id="${esc(l.id)}" aria-label="Lektion bearbeiten">${I.edit}</button>
+    <button class="icon-btn danger" data-action="lesson-del" data-id="${esc(l.id)}" aria-label="Lektion löschen">${I.trash}</button></li>`;
+}
+function startLesson(id){
+  const l = lessonById(id); if (!l) return;
+  const answers = {};
+  l.blocks.forEach(b => { if (b.kind === 'question') answers[b.id] = {id:b.id, sel:[], judge:[null, null, null, null], checked:false, result:null} });
+  state.lp = {id, step:0, answers, finished:false};
+  go({name:'lesson'});
+}
+function viewLesson(){
+  const lp = state.lp, l = lessonById(lp.id); if (!l) return go({name:'home'});
+  const sb = subj(l.subjectId), lang = l.lang, T = L[lang], n = l.blocks.length;
+  barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="lesson-exit">${I.back}Fach</button><div class="bar-title center"></div><div style="width:92px"></div></div>`;
+  barEl.querySelector('.bar-title').textContent = l.title;
+  const shown = l.blocks.slice(0, lp.step + 1);
+  const cur = l.blocks[lp.step], ca = cur && cur.kind === 'question' ? lp.answers[cur.id] : null;
+  const last = lp.step === n - 1;
+  let next = '';
+  if (!lp.finished) {
+    if (ca && !ca.checked) next = `<button type="button" class="btn primary wide" data-action="check" ${isAnswered(cur, ca) ? '' : 'disabled'}>${T.check}</button>`;
+    else next = `<button type="button" class="btn primary wide lnext" data-action="lesson-next">${last ? T.finish : T.next}</button>`;
+  }
+  const qs = l.blocks.filter(b => b.kind === 'question'), pts = qs.reduce((a, b) => a + (lp.answers[b.id].result ? lp.answers[b.id].result.score : 0), 0);
+  mainEl.innerHTML = `<div style="--c:${safeColor(sb && sb.color)}" lang="${lang}">
+    <div class="learn-top"><div class="progress"><i style="width:${lp.finished ? 100 : Math.round(lp.step / n * 100)}%"></i></div><span class="count">${Math.min(lp.step + 1, n)} / ${n}</span></div>
+    <h1 class="lesson-title">${esc(l.title)}</h1>
+    <div class="lsteps">${shown.map(b => {
+      if (b.kind === 'text') return `<section class="lstep text">${b.title ? `<h3>${esc(b.title)}</h3>` : ''}<div class="prose">${md(b.text)}</div>${mediaBlock(b.media)}</section>`;
+      const a = lp.answers[b.id];
+      return `<section class="lstep qcard">${questionHead(b, T)}${choiceInner(b, a, a.checked, a.result, T)}${a.checked ? resultBanner(b, a.result, T, lang) : ''}</section>`;
+    }).join('')}
+    ${next}
+    ${lp.finished ? `<section class="done" style="padding:8px 0 0"><h2>${T.lessonDone}</h2>
+      ${qs.length ? `<p class="muted">${num(Math.round(pts * 10) / 10, lang)} / ${qs.length} ${T.points}</p>` : ''}
+      <div class="done-actions"><button class="btn" data-action="lesson-open" data-id="${esc(l.id)}">Nochmal</button>
+      <button class="btn primary" data-action="open-subject" data-id="${esc(l.subjectId)}">Zurück zum Fach</button></div></section>` : ''}</div></div>`;
+}
+function lessonCheck(){
+  const lp = state.lp, l = lessonById(lp.id), b = l.blocks[lp.step], a = lp.answers[b.id];
+  if (!isAnswered(b, a)) return;
+  a.result = scoreOf(b, a); a.checked = true;
+  record(l.subjectId, [a.result.score === 1]);
+  render(); scrollToStep();
+}
+function scrollToStep(){ const st = mainEl.querySelectorAll('.lstep'); const el = st[st.length - 1]; if (el) el.scrollIntoView({behavior:'smooth', block:'start'}) }
+async function lessonNext(){
+  const lp = state.lp, l = lessonById(lp.id);
+  if (lp.step < l.blocks.length - 1) { lp.step++; render(); scrollToStep(); return }
+  lp.finished = true;
+  const qs = l.blocks.filter(b => b.kind === 'question');
+  l.progress = {done:true, at:Date.now(), pts:qs.reduce((x, b) => x + (lp.answers[b.id].result ? lp.answers[b.id].result.score : 0), 0), max:qs.length};
+  put('lessons', l).catch(() => {});
+  render(); const d = mainEl.querySelector('.done'); if (d) d.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+/* Lektionen schreiben */
+const blankTextBlock = () => ({id:uid(), kind:'text', title:'', text:'', media:[]});
+const blankQBlock = (type = 'single') => ({id:uid(), kind:'question', type, question:'', qMedia:[], options: type === 'kprim' ? [0,1,2,3].map(() => ({...blankOpt(), correct:null})) : [0,1,2,3].map(blankOpt)});
+function lessonMedia(key){
+  const d = state.ldraft, m = key.match(/^([tqo])(\d+)(?:_(\d+))?$/), b = d.blocks[+m[2]];
+  return m[1] === 't' ? b.media : m[1] === 'q' ? b.qMedia : b.options[+m[3]].media;
+}
+function newLessonDraft(sid){ return {subjectId:sid, title:'', lang:ls.get('last-lang') || 'de', blocks:[blankTextBlock(), blankQBlock()], editId:null} }
+function lessonToDraft(l){
+  return {subjectId:l.subjectId, title:l.title, lang:l.lang, editId:l.id,
+    blocks:l.blocks.map(b => b.kind === 'text' ? {...b, media:b.media.slice()} : {...b, qMedia:b.qMedia.slice(), options:b.options.map(o => ({...o, media:o.media.slice()}))})};
+}
+function viewLessonEdit(){
+  const d = state.ldraft, s = subj(d.subjectId);
+  barEl.innerHTML = `<div class="bar-in"><button class="back" data-action="lesson-cancel">${I.back}Abbrechen</button>
+    <div class="bar-title center">${d.editId ? 'Lektion bearbeiten' : 'Neue Lektion'}</div><div style="width:92px"></div></div>`;
+  mainEl.innerHTML = `<form class="form" style="--c:${safeColor(s && s.color)}" novalidate>
+    <div class="field"><label class="lbl" for="l-t">Titel der Lektion</label>
+      <input type="text" id="l-t" data-lbind="title" value="${esc(d.title)}" placeholder="z. B. Aufbau des Neurons"></div>
+    <div class="field"><span class="lbl">Sprache</span>
+      <div class="seg two"><button type="button" class="${d.lang === 'de' ? 'on' : ''}" data-action="lset-lang" data-l="de">Deutsch</button>
+      <button type="button" class="${d.lang === 'en' ? 'on' : ''}" data-action="lset-lang" data-l="en">English</button></div></div>
+    <p class="sub">Die Lektion läuft von oben nach unten: Textabschnitte lesen, Fragen dazwischen lösen. Mit den Pfeilen änderst du die Reihenfolge.</p>
+    ${d.blocks.map((b, i) => `<section class="lblock"><div class="lblock-head">
+        <span class="tag ${b.kind === 'text' ? '' : 't-' + b.type}">${i + 1} · ${b.kind === 'text' ? 'Text' : TYPE_NAMES[b.type]}</span><span class="spacer"></span>
+        <button type="button" class="icon-btn" data-action="lb-move" data-i="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="Nach oben">${I.up}</button>
+        <button type="button" class="icon-btn" data-action="lb-move" data-i="${i}" data-d="1" ${i < d.blocks.length - 1 ? '' : 'disabled'} aria-label="Nach unten">${I.down}</button>
+        <button type="button" class="icon-btn danger" data-action="lb-del" data-i="${i}" aria-label="Abschnitt entfernen">${I.trash}</button></div>
+      ${b.kind === 'text' ? textBlockEd(b, i) : qBlockEd(b, i)}</section>`).join('')}
+    <div class="add-row"><button type="button" class="btn" data-action="lb-add" data-k="text">${I.plus}Textabschnitt</button>
+      <button type="button" class="btn" data-action="lb-add" data-k="question">${I.plus}Frage</button></div>
+    ${state.err ? `<div class="err" role="alert">${esc(state.err)}</div>` : ''}
+    <div class="form-actions"><button type="button" class="btn primary" data-action="lesson-save">Lektion speichern</button></div></form>`;
+}
+function textBlockEd(b, i){
+  return `<input type="text" data-lbind="b.${i}.title" value="${esc(b.title)}" placeholder="Zwischentitel (optional)" aria-label="Zwischentitel">
+    <textarea class="grow-ta" rows="5" data-lbind="b.${i}.text" placeholder="Theorie-Text" aria-label="Text">${esc(b.text)}</textarea>
+    <p class="fmt-hint">Formatierung: **fett**, Zeilen mit «- » werden zur Aufzählung, «## » zur Unterüberschrift, Leerzeile = neuer Absatz.</p>
+    ${mediaEditor('t' + i, 'Bild, Video oder Datei', 'l')}`;
+}
+function qBlockEd(b, i){
+  const kp = b.type === 'kprim';
+  return `<div class="seg">${['single','multi','kprim'].map(t => `<button type="button" class="${b.type === t ? 'on' : ''}" data-action="lb-type" data-i="${i}" data-t="${t}">${TYPE_NAMES[t]}</button>`).join('')}</div>
+    <textarea class="grow-ta" rows="2" data-lbind="b.${i}.question" placeholder="Frage" aria-label="Frage">${esc(b.question)}</textarea>
+    ${mediaEditor('q' + i, 'Anhang zur Frage', 'l')}
+    <p class="sub">${kp ? 'Lege bei jeder Aussage fest, ob sie richtig oder falsch ist.' : b.type === 'single' ? 'Markiere genau eine Antwort als richtig.' : 'Markiere alle richtigen Antworten.'}</p>
+    ${b.options.map((o, k) => `<div class="opt-ed">
+      ${kp ? `<div class="kp-ed-top"><span class="num">${k + 1}</span>
+          <textarea rows="1" class="grow-ta" data-lbind="b.${i}.o.${k}.text" placeholder="Aussage ${k + 1}" aria-label="Aussage ${k + 1}">${esc(o.text)}</textarea>
+          <div class="truth"><button type="button" class="t ${o.correct === true ? 'on' : ''}" data-action="lb-truth" data-i="${i}" data-o="${k}" data-v="1">richtig</button>
+          <button type="button" class="f ${o.correct === false ? 'on' : ''}" data-action="lb-truth" data-i="${i}" data-o="${k}" data-v="0">falsch</button></div></div>`
+      : `<div class="opt-head"><button type="button" class="mark ${b.type === 'single' ? 'radio' : ''} ${o.correct ? 'on' : ''}" data-action="lb-correct" data-i="${i}" data-o="${k}"><span class="ck"></span>richtig</button>
+          <textarea rows="1" class="grow-ta" data-lbind="b.${i}.o.${k}.text" placeholder="Antwort ${String.fromCharCode(65 + k)}" aria-label="Antwort ${String.fromCharCode(65 + k)}">${esc(o.text)}</textarea>
+          ${b.options.length > 2 ? `<button type="button" class="icon-btn" data-action="lb-rmopt" data-i="${i}" data-o="${k}" aria-label="Option entfernen">${I.close}</button>` : ''}</div>`}
+      <textarea rows="2" data-lbind="b.${i}.o.${k}.explanation" placeholder="Erklärung: Warum richtig bzw. falsch?" aria-label="Erklärung">${esc(o.explanation)}</textarea>
+      ${mediaEditor('o' + i + '_' + k, 'Anhang zur Erklärung', 'l')}</div>`).join('')}
+    ${!kp && b.options.length < 8 ? `<button type="button" class="btn" data-action="lb-addopt" data-i="${i}">${I.plus}Option hinzufügen</button>` : ''}`;
+}
+async function saveLesson(){
+  if (saving) return;
+  const d = state.ldraft;
+  let e = !d.title.trim() ? 'Bitte gib der Lektion einen Titel.' : !d.blocks.length ? 'Füge mindestens einen Abschnitt hinzu.' : '';
+  if (!e) d.blocks.some((b, i) => {
+    const m = b.kind === 'text' ? (!b.text.trim() && !b.media.length ? 'Bitte schreibe einen Text.' : '') : validate(b);
+    if (m) e = `Abschnitt ${i + 1}: ${m}`; return !!m;
+  });
+  if (e) { state.err = e; render(); const el = mainEl.querySelector('.err'); el && el.scrollIntoView({block:'center', behavior:'smooth'}); return }
+  saving = true; const created = [];
+  try {
+    const orig = d.editId ? lessonById(d.editId) : null, blocks = [];
+    for (const b of d.blocks) {
+      if (b.kind === 'text') blocks.push({id:b.id, kind:'text', title:b.title.trim(), text:b.text.trim(), media: await storeMedia(b.media, created)});
+      else { const options = []; for (const o of b.options) options.push({text:o.text.trim(), correct:o.correct === true, explanation:o.explanation.trim(), media: await storeMedia(o.media, created)});
+        blocks.push({id:b.id, kind:'question', type:b.type, question:b.question.trim(), qMedia: await storeMedia(b.qMedia, created), options}) }
+    }
+    const l = {id: orig ? orig.id : uid(), subjectId:d.subjectId, title:d.title.trim(), lang:d.lang, created: orig ? orig.created : Date.now(), blocks, progress: orig ? orig.progress : null};
+    await put('lessons', l);
+    if (orig) {
+      const keep = new Set(lessonMediaIds(l));
+      for (const m of lessonMediaIds(orig)) if (!keep.has(m)) await del('media', m).catch(() => {});
+      state.lessons = state.lessons.map(x => x.id === l.id ? l : x);
+    } else state.lessons.push(l);
+    ls.set('last-lang', d.lang); state.ldraft = null; toast('Lektion gespeichert'); go({name:'subject', id:l.subjectId});
+  } catch (err) {
+    for (const id of created) await del('media', id).catch(() => {});
+    state.err = err && err.name === 'QuotaExceededError' ? 'Der Speicher auf diesem Gerät ist voll.' : 'Speichern hat nicht geklappt. Bitte versuche es noch einmal.'; render();
+  } finally { saving = false }
+}
+const lessonMediaIds = l => l.blocks.flatMap(b => b.kind === 'text' ? b.media : [...b.qMedia, ...b.options.flatMap(o => o.media)]).map(m => m.id);
+async function deleteLesson(id){
+  const l = lessonById(id); if (!l) return;
+  if (!(await ask({title:'Lektion löschen?', text:`«${l.title.slice(0, 80)}» und alle Anhänge dieser Lektion werden endgültig gelöscht.`, ok:'Löschen', danger:true}))) return;
+  try {
+    await del('lessons', id);
+    for (const m of lessonMediaIds(l)) await del('media', m).catch(() => {});
+    state.lessons = state.lessons.filter(x => x.id !== id); toast('Lektion gelöscht'); render();
+  } catch { toast('Löschen hat nicht geklappt') }
 }
 
 /* ---------- Umwandeln ---------- */
@@ -1014,11 +1362,34 @@ async function storageInfo(){
   el.innerHTML = lines.map(l => `<span>${esc(l)}</span>`).join('');
 }
 const MAGIC = 'KKBACKUP1';
+const normMedia = l => Array.isArray(l) ? l.filter(m => m && m.id).map(m => ({id:String(m.id), name:String(m.name || 'Datei'), type:String(m.type || 'application/octet-stream')})) : [];
+const normOpts = (l, type) => {
+  if (!Array.isArray(l)) return null;
+  const o = l.map(x => ({text:String(x && x.text || ''), correct:!!(x && x.correct === true), explanation:String(x && x.explanation || ''), media:normMedia(x && x.media)}));
+  if (o.length < 2 || (type === 'kprim' && o.length !== 4)) return null;
+  return o;
+};
+function normLesson(l){
+  if (!l || !l.id || !Array.isArray(l.blocks)) return null;
+  const blocks = l.blocks.map(b => {
+    if (!b) return null;
+    if (b.kind === 'text') return {id:String(b.id || uid()), kind:'text', title:String(b.title || ''), text:String(b.text || ''), media:normMedia(b.media)};
+    if (b.kind === 'question' && ['single','multi','kprim'].includes(b.type)) {
+      const options = normOpts(b.options, b.type); if (!options) return null;
+      return {id:String(b.id || uid()), kind:'question', type:b.type, question:String(b.question || ''), qMedia:normMedia(b.qMedia), options};
+    }
+    return null;
+  }).filter(Boolean);
+  if (!blocks.length) return null;
+  const pr = l.progress && typeof l.progress === 'object' ? {done:!!l.progress.done, at:+l.progress.at || 0, pts:+l.progress.pts || 0, max:+l.progress.max || 0} : null;
+  return {id:String(l.id), subjectId:String(l.subjectId), title:String(l.title || 'Lektion'), lang:l.lang === 'en' ? 'en' : 'de', created:+l.created || Date.now(), blocks, progress:pr};
+}
 function normCard(c){
   if (!c || !c.id || !TYPES.includes(c.type)) return null;
-  const med = l => Array.isArray(l) ? l.filter(m => m && m.id).map(m => ({id:String(m.id), name:String(m.name || 'Datei'), type:String(m.type || 'application/octet-stream')})) : [];
+  const med = normMedia;
   const out = {id:String(c.id), subjectId:String(c.subjectId), type:c.type, lang:c.lang === 'en' ? 'en' : 'de', question:String(c.question || ''), qMedia:med(c.qMedia),
     created:+c.created || Date.now(), stats:{known:+(c.stats && c.stats.known) || 0, again:+(c.stats && c.stats.again) || 0}};
+  if (c.last === 'known' || c.last === 'again') { out.last = c.last; out.lastAt = +c.lastAt || 0 }
   if (c.type === 'basic') { out.answer = String(c.answer || ''); out.aMedia = med(c.aMedia); return out }
   if (!Array.isArray(c.options)) return null;
   out.options = c.options.map(o => ({text:String(o && o.text || ''), correct:!!(o && o.correct === true), explanation:String(o && o.explanation || ''), media:med(o && o.media)}));
@@ -1030,16 +1401,16 @@ async function makeBackup(){
   const out = $('#bk-out'); if (!out) return;
   out.innerHTML = '<p class="muted small">Backup wird erstellt …</p>';
   try {
-    const [subjects, cards, media] = await Promise.all([all('subjects'), all('cards'), all('media')]);
+    const [subjects, cards, media, lessons, stats] = await Promise.all([all('subjects'), all('cards'), all('media'), all('lessons'), get('meta', 'stats')]);
     let offset = 0; const index = [], parts = [];
     for (const m of media) { const len = m.data.byteLength; index.push({id:m.id, name:m.name, type:m.type, size:m.size, offset, length:len}); parts.push(m.data); offset += len }
-    const json = new TextEncoder().encode(JSON.stringify({app:'karteikarten', version:1, exported:new Date().toISOString(), subjects, cards, media:index}));
+    const json = new TextEncoder().encode(JSON.stringify({app:'karteikarten', version:1, exported:new Date().toISOString(), subjects, cards, lessons, stats: stats || null, media:index}));
     const head = new TextEncoder().encode(MAGIC), lenBuf = new ArrayBuffer(4); new DataView(lenBuf).setUint32(0, json.byteLength, true);
     const blob = new Blob([head, lenBuf, json, ...parts], {type:'application/octet-stream'});
     const d = new Date(), stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     backupFile = new File([blob], `Karteikarten-Backup-${stamp}.kartei`, {type:'application/octet-stream'});
     const mb = (blob.size / 1048576).toFixed(1).replace('.', ',');
-    const info = `${subjects.length} ${subjects.length === 1 ? 'Fach' : 'Fächer'} · ${cards.length} ${cards.length === 1 ? 'Karte' : 'Karten'} · ${media.length} ${media.length === 1 ? 'Anhang' : 'Anhänge'} · ${mb} MB`;
+    const info = `${subjects.length} ${subjects.length === 1 ? 'Fach' : 'Fächer'} · ${cards.length} ${cards.length === 1 ? 'Karte' : 'Karten'} · ${lessons.length} ${lessons.length === 1 ? 'Lektion' : 'Lektionen'} · ${media.length} ${media.length === 1 ? 'Anhang' : 'Anhänge'} · ${mb} MB`;
     if (isIOS && canShareFile(backupFile)) {
       out.innerHTML = `<p class="small muted" style="margin-bottom:8px">${info}</p><button class="btn wide" data-action="share-backup">${I.share}Teilen oder in «Dateien» sichern</button>`;
     } else {
@@ -1059,7 +1430,8 @@ async function importBackup(file){
     if (head !== MAGIC) throw new Error('format');
     const len = new DataView(buf, MAGIC.length, 4).getUint32(0, true), start = MAGIC.length + 4;
     const meta = JSON.parse(new TextDecoder().decode(buf.slice(start, start + len))), base = start + len;
-    if (meta.app !== 'karteikarten' || !Array.isArray(meta.subjects) || !Array.isArray(meta.cards)) throw new Error('format');
+    if (meta.app !== 'karteikarten' || !Array.isArray(meta.subjects) || !Array.isArray(meta.cards || [])) throw new Error('format');
+    meta.cards = meta.cards || [];
     // Fächer mit gleichem Namen zusammenführen
     const norm = x => String(x || '').trim().toLowerCase(), remap = {};
     const newSubjects = meta.subjects.filter(s => s && s.id).filter(s => {
@@ -1069,14 +1441,34 @@ async function importBackup(file){
       return true;
     });
     const cards = meta.cards.map(normCard).filter(Boolean).map(c => ({...c, subjectId: remap[c.subjectId] || c.subjectId}));
-    const into = [...new Set(cards.map(c => c.subjectId))].map(id => (state.subjects.find(x => x.id === id) || newSubjects.find(x => String(x.id) === id) || {}).name).filter(Boolean);
-    const ok = await ask({title:'Karten importieren?', text:`${cards.length} ${cards.length === 1 ? 'Karte wird' : 'Karten werden'} übernommen${into.length ? ` (Fach: ${into.join(', ')})` : ''}. Deine bestehenden Karten bleiben erhalten; Karten, die schon vorhanden sind, werden nicht doppelt angelegt.`, ok:'Importieren'});
+    const lessons = (Array.isArray(meta.lessons) ? meta.lessons : []).map(normLesson).filter(Boolean).map(l => ({...l, subjectId: remap[l.subjectId] || l.subjectId}));
+    const into = [...new Set([...cards, ...lessons].map(c => c.subjectId))].map(id => (state.subjects.find(x => x.id === id) || newSubjects.find(x => String(x.id) === id) || {}).name).filter(Boolean);
+    if (!cards.length && !lessons.length) throw new Error('empty');
+    const what = [cards.length ? `${cards.length} ${cards.length === 1 ? 'Karte' : 'Karten'}` : '', lessons.length ? `${lessons.length} ${lessons.length === 1 ? 'Lektion' : 'Lektionen'}` : ''].filter(Boolean).join(' und ');
+    const ok = await ask({title:'Importieren?', text:`${what} ${cards.length + lessons.length === 1 ? 'wird' : 'werden'} übernommen${into.length ? ` (Fach: ${into.join(', ')})` : ''}. Deine bestehenden Karten bleiben erhalten; Karten, die schon vorhanden sind, werden nicht doppelt angelegt.`, ok:'Importieren'});
     if (!ok) return;
     for (const m of (meta.media || [])) await put('media', {id:String(m.id), name:String(m.name || 'Datei'), type:String(m.type || 'application/octet-stream'), size:m.length, data:buf.slice(base + m.offset, base + m.offset + m.length)});
-    await putMany('subjects', newSubjects.map(s => ({id:String(s.id), name:String(s.name || 'Fach'), color:safeColor(s.color), created:+s.created || Date.now()})));
+    await putMany('subjects', newSubjects.map(s => {
+      const ex = Array.isArray(s.exams) ? s.exams.filter(x => x && +x.max > 0).map(x => ({at:+x.at || 0, pts:+x.pts || 0, max:+x.max})).slice(-10) : [];
+      const old = state.subjects.find(x => x.id === String(s.id));
+      const merged = old ? [...(old.exams || []), ...ex.filter(x => !(old.exams || []).some(y => y.at === x.at))].sort((a, b) => a.at - b.at).slice(-10) : ex;
+      return {id:String(s.id), name:String(s.name || 'Fach'), color:safeColor(s.color), created:+s.created || Date.now(), exams:merged};
+    }));
     await putMany('cards', cards);
-    await load(); toast(`Import fertig: ${cards.length} Karten`);
-    const target = [...new Set(cards.map(c => c.subjectId))];
+    await putMany('lessons', lessons);
+    if (meta.stats && meta.stats.days && typeof meta.stats.days === 'object') {
+      const days = state.stats.days;
+      for (const [k, v] of Object.entries(meta.stats.days)) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(k) || !v) continue;
+        const cur = days[k] || {r:0, t:0, s:{}};
+        const t = Math.max(cur.t, +v.t || 0), r = Math.max(cur.r, +v.r || 0), sx = {...cur.s};
+        for (const [sid, x] of Object.entries(v.s || {})) { const sidN = remap[sid] || sid, c0 = sx[sidN] || {r:0, t:0}; sx[sidN] = {r:Math.max(c0.r, +x.r || 0), t:Math.max(c0.t, +x.t || 0)} }
+        days[k] = {r:Math.min(r, t), t, s:sx};
+      }
+      await put('meta', state.stats);
+    }
+    await load(); toast(`Import fertig: ${what}`);
+    const target = [...new Set([...cards, ...lessons].map(c => c.subjectId))];
     go(target.length === 1 ? {name:'subject', id:target[0]} : {name:'home'});
   } catch (e) {
     closeSheet();
@@ -1112,7 +1504,7 @@ const actions = {
   'set-truth': el => { state.draft.options[+el.dataset.i].correct = el.dataset.v === '1'; state.err = ''; render() },
   'add-opt': () => { state.draft.options.push(blankOpt()); render() },
   'rm-opt': el => { state.draft.options.splice(+el.dataset.i, 1); render() },
-  'rm-media': el => { draftMedia(el.dataset.key).splice(+el.dataset.i, 1); render() },
+  'rm-media': el => { (el.dataset.scope === 'l' ? lessonMedia : draftMedia)(el.dataset.key).splice(+el.dataset.i, 1); render() },
   'save-card': (el, e) => { e.preventDefault(); saveDraft(!!el.dataset.again) },
   'del-card': el => deleteCard(el.dataset.id),
   'learn': () => startLearn(state.view.id || (state.session && state.session.sid)),
@@ -1123,23 +1515,46 @@ const actions = {
     const r = mainEl.querySelector('.rate'); if (r) r.classList.remove('hide');
   },
   'pick': el => {
-    const cur = activeAnswer(), c = cardById(cur.id), i = +el.dataset.i;
+    const {a:cur, c} = activeQ(), i = +el.dataset.i;
     if (cur.checked) return;
     if (c.type === 'single') cur.sel = [i];
     else cur.sel = cur.sel.includes(i) ? cur.sel.filter(x => x !== i) : [...cur.sel, i];
-    mainEl.querySelectorAll('.opt').forEach(b => b.classList.toggle('sel', cur.sel.includes(+b.dataset.i)));
+    el.closest('.opts').querySelectorAll('.opt').forEach(b => b.classList.toggle('sel', cur.sel.includes(+b.dataset.i)));
     const chk = mainEl.querySelector('[data-action="check"]'); if (chk) chk.disabled = !cur.sel.length;
     examDots();
   },
   'judge': el => {
-    const cur = activeAnswer(), i = +el.dataset.i; if (cur.checked) return;
+    const cur = activeQ().a, i = +el.dataset.i; if (cur.checked) return;
     cur.judge[i] = el.dataset.v === '1';
     el.parentNode.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', (p.dataset.v === '1') === cur.judge[i]));
     const chk = mainEl.querySelector('[data-action="check"]'); if (chk) chk.disabled = !cur.judge.every(x => x !== null);
     examDots();
   },
-  'check': () => checkAnswer(),
+  'check': () => state.view.name === 'lesson' ? lessonCheck() : checkAnswer(),
   'convert': el => convertCard(el.dataset.id),
+  'stats': () => go({name:'stats'}),
+  'lesson-open': el => startLesson(el.dataset.id),
+  'lesson-next': () => lessonNext(),
+  'lesson-exit': () => go({name:'subject', id:lessonById(state.lp.id).subjectId}),
+  'lesson-new': () => { state.ldraft = newLessonDraft(state.view.id); go({name:'lesson-edit'}) },
+  'lesson-edit': el => { state.ldraft = lessonToDraft(lessonById(el.dataset.id)); go({name:'lesson-edit'}) },
+  'lesson-del': el => deleteLesson(el.dataset.id),
+  'lesson-save': () => saveLesson(),
+  'lesson-cancel': async () => {
+    if (!(await ask({title:'Bearbeitung abbrechen?', text:'Nicht gespeicherte Änderungen gehen verloren.', ok:'Verwerfen', danger:true}))) return;
+    const sid = state.ldraft.subjectId; state.ldraft = null; go({name:'subject', id:sid});
+  },
+  'lset-lang': el => { state.ldraft.lang = el.dataset.l; render() },
+  'lb-add': el => { state.ldraft.blocks.push(el.dataset.k === 'text' ? blankTextBlock() : blankQBlock()); render();
+    const b = mainEl.querySelectorAll('.lblock'); b[b.length - 1].scrollIntoView({behavior:'smooth', block:'center'}) },
+  'lb-del': el => { state.ldraft.blocks.splice(+el.dataset.i, 1); render() },
+  'lb-move': el => { const b = state.ldraft.blocks, i = +el.dataset.i, j = i + +el.dataset.d; if (j < 0 || j >= b.length) return; [b[i], b[j]] = [b[j], b[i]]; render() },
+  'lb-type': el => { const b = state.ldraft.blocks[+el.dataset.i], t = el.dataset.t; if (b.type === t) return; b.options = convertOptions(b.options, b.type, t); b.type = t; state.err = ''; render() },
+  'lb-correct': el => { const b = state.ldraft.blocks[+el.dataset.i], k = +el.dataset.o;
+    if (b.type === 'single') b.options.forEach((o, x) => o.correct = x === k ? !o.correct : false); else b.options[k].correct = !b.options[k].correct; render() },
+  'lb-truth': el => { state.ldraft.blocks[+el.dataset.i].options[+el.dataset.o].correct = el.dataset.v === '1'; render() },
+  'lb-addopt': el => { state.ldraft.blocks[+el.dataset.i].options.push(blankOpt()); render() },
+  'lb-rmopt': el => { state.ldraft.blocks[+el.dataset.i].options.splice(+el.dataset.o, 1); render() },
   'exam-setup': () => examSetupSheet(state.view.id || (state.exam && state.exam.sid)),
   'setup-type': el => { const t = el.dataset.t; if (setup.types.has(t)) { if (setup.types.size > 1) setup.types.delete(t) } else setup.types.add(t); examSetupSheet(setup.sid) },
   'setup-count': el => { setup.count = +el.dataset.n; examSetupSheet(setup.sid) },
@@ -1153,7 +1568,7 @@ const actions = {
   'exam-self': el => { activeAnswer().self = el.dataset.v === '1'; render() },
   'exam-submit': () => submitExam(),
   'exam-cancel': async () => { if (await ask({title:'Prüfung abbrechen?', text:'Deine Antworten in dieser Prüfung gehen verloren.', ok:'Abbrechen', danger:true})) go({name:'subject', id:state.exam.sid}) },
-  'exam-retry': () => { const e = state.exam; startExam(e.sid, shuffle(e.ids.filter(id => e.results[id].score < 1))) },
+  'exam-retry': () => { const e = state.exam; startExam(e.sid, shuffle(e.ids.filter(id => e.results[id].score < 1)), true) },
   'exam-filter': el => { state.exam.onlyWrong = el.dataset.w === '1'; render() },
   'exam-jump': el => {
     const e = state.exam; if (e.onlyWrong && e.results[el.dataset.id].score === 1) { e.onlyWrong = false; render() }
@@ -1184,6 +1599,14 @@ document.addEventListener('submit', e => {
 });
 function onBind(e){
   if (e.target.classList && e.target.classList.contains('grow-ta')) autoGrow(e.target);
+  const lb = e.target.dataset && e.target.dataset.lbind;
+  if (lb && state.ldraft) {
+    const d = state.ldraft, v = e.target.value, p = lb.split('.');
+    if (p[0] === 'title') d.title = v;
+    else if (p.length === 3) d.blocks[+p[1]][p[2]] = v;
+    else d.blocks[+p[1]].options[+p[3]][p[4]] = v;
+    return;
+  }
   const b = e.target.dataset && e.target.dataset.bind; if (!b || !state.draft) return;
   const d = state.draft, v = e.target.value;
   if (b.startsWith('opt.')) { const [, i, k] = b.split('.'); d.options[+i][k] = v }
@@ -1195,6 +1618,7 @@ document.addEventListener('change', e => {
   const t = e.target;
   if (t.dataset && t.dataset.bind === 'subjectId') { if (state.draft && state.draft.subjectId !== t.value) onBind(e); return }
   if (t.dataset && t.dataset.media && state.draft) { draftMedia(t.dataset.media).push(...t.files); render(); return }
+  if (t.dataset && t.dataset.lmedia && state.ldraft) { lessonMedia(t.dataset.lmedia).push(...t.files); render(); return }
   if (t.dataset && 'import' in t.dataset && t.files[0]) importBackup(t.files[0]);
 });
 
@@ -1203,6 +1627,8 @@ async function load(){
   const [s, c] = await Promise.all([all('subjects'), all('cards')]);
   state.subjects = s.sort((a, b) => a.created - b.created);
   state.cards = c;
+  state.lessons = (await all('lessons')).sort((a, b) => a.created - b.created);
+  const st = await get('meta', 'stats'); state.stats = st && st.days ? st : {id:'stats', days:{}};
 }
 (async () => {
   try { await load() } catch { mainEl.innerHTML = '<div class="empty"><h1>Speicher nicht verfügbar</h1><p>Dieser Browser erlaubt keine Speicherung. Öffne die App in Safari und nicht im privaten Modus.</p></div>'; return }
