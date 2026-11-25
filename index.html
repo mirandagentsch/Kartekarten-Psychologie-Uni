@@ -47,6 +47,7 @@ LAYOUT: eine ruhige Spalte bis 820px, Kacheln im Raster, auf dem iPhone alles un
   }
 }
 *{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--font);overflow-x:clip;
   -webkit-tap-highlight-color:transparent;min-height:100vh;min-height:100dvh}
@@ -353,6 +354,17 @@ input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var
 .selbar span{flex:1}
 @media (max-width:520px){.sh-btns .btn{padding:0 12px}}
 
+/* Videos */
+.vrow{padding:0 6px 0 10px}
+.vplay{flex:none;width:48px;height:48px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+.vplay svg{width:20px;height:20px;margin-left:2px}
+.vrow.seen .vplay{background:var(--good)}
+.vbody{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:16px;padding:20px calc(var(--sr) + 16px) calc(var(--sb) + 20px) calc(var(--sl) + 16px)}
+.vframe{width:100%;max-width:1100px;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden}
+.vframe iframe,.vframe video{width:100%;height:100%;border:0;display:block;background:#000}
+.btn.seen-on{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.viewer-bar .btn{min-height:40px;font-size:14px;padding:0 12px}
+
 /* Textformatierung */
 .c-rot{color:var(--c-rot)}.c-orange{color:var(--c-orange)}.c-gruen{color:var(--c-gruen)}.c-blau{color:var(--c-blau)}.c-violett{color:var(--c-violett)}
 .fmt-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px;background:var(--surface2);border:1px solid var(--line);border-radius:12px}
@@ -546,6 +558,8 @@ const I = {
   up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>',
   down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10l6 6 6-6"/></svg>',
   cloud:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10.5a4 4 0 00.6-7.95A6 6 0 006.2 9.1 4.5 4.5 0 007 18z"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 001.5.86l10.5-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z"/></svg>',
+  ext:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>',
   share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 8l5-5 5 5M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>'
 };
 
@@ -768,6 +782,7 @@ function viewSubject(){
         <button class="btn" data-action="new-card">${I.plus}Neue Karte</button>
       </div>${progressBlock(s)}</section>
     ${lecturesSection(s, f, cs)}
+    ${videosSection(s, f)}
     <div class="section-h"><h2>Lektionen${fName ? ` <span class="sh-sub">· ${esc(fName)}</span>` : ''}</h2><button class="btn" data-action="lesson-new">${I.plus}Neue Lektion</button></div>
     ${shownL.length ? `<ul class="clist" style="margin-bottom:28px">${shownL.map(l => lessonRow(l, f)).join('')}</ul>`
       : `<p class="muted small" style="margin:0 0 28px">${lessonsOf(s.id).length ? 'In dieser Auswahl gibt es keine Lektionen.' : 'Lektionen verbinden Theorie mit Fragen: Text lesen, Frage lösen, weiterlesen. Schreib selbst eine oder importiere eine von Claude.'}</p>`}
@@ -810,11 +825,13 @@ function lecturesSection(s, f, all){
   if (!lecs.length) return `<div class="section-h"><h2>Vorlesungen</h2><button class="btn" data-action="lec-add">${I.plus}Vorlesung</button></div>
     <p class="muted small" style="margin:0 0 28px">Teile deine Karten nach Vorlesungen auf. Dann lernst du gezielt eine Vorlesung oder mischst vor der Prüfung alles.</p>`;
   const none = all.filter(c => !lecOf(c));
-  const tiles = [{id:'all', name:'Alle Vorlesungen', cards:all}, ...lecs.map(L => ({id:L.id, name:L.name, cards:all.filter(c => c.lectureId === L.id)})), ...(none.length ? [{id:'none', name:'Ohne Vorlesung', cards:none}] : [])];
+  const vids = videosOf(s.id), noneV = vids.filter(v => !(v.lectureId && lecs.some(L => L.id === v.lectureId)));
+  const tiles = [{id:'all', name:'Alle Vorlesungen', cards:all, v:vids.length}, ...lecs.map(L => ({id:L.id, name:L.name, cards:all.filter(c => c.lectureId === L.id), v:vids.filter(x => x.lectureId === L.id).length})),
+    ...(none.length || noneV.length ? [{id:'none', name:'Ohne Vorlesung', cards:none, v:noneV.length}] : [])];
   return `<div class="section-h"><h2>Vorlesungen</h2><div class="sh-btns"><button class="btn" data-action="lec-manage" aria-label="Vorlesungen bearbeiten" title="Bearbeiten">${I.edit}</button><button class="btn" data-action="lec-add">${I.plus}Vorlesung</button></div></div>
     <div class="lecs">${tiles.map(t => { const n = t.cards.length, p = pct(t.cards.filter(c => c.last === 'known').length, n);
       return `<button class="lec ${f === t.id ? 'on' : ''} ${t.id === 'all' ? 'lec-all' : ''}" data-action="lec-filter" data-l="${esc(t.id)}" aria-pressed="${f === t.id}">
-        <span class="lec-name">${esc(t.name)}</span><span class="lec-meta">${n} ${n === 1 ? 'Karte' : 'Karten'}${n ? ` · ${p} % sicher` : ''}</span>
+        <span class="lec-name">${esc(t.name)}</span><span class="lec-meta">${n} ${n === 1 ? 'Karte' : 'Karten'}${n ? ` · ${p} % sicher` : ''}${t.v ? ` · ${t.v} ${t.v === 1 ? 'Video' : 'Videos'}` : ''}</span>
         <span class="tile-bar"><i style="width:${p}%"></i></span></button>` }).join('')}</div>`;
 }
 function lecAddSheet(after){
@@ -848,6 +865,7 @@ async function deleteLecture(id){
   const cs = state.cards.filter(c => c.subjectId === sid && c.lectureId === id), lsn = state.lessons.filter(l => l.subjectId === sid && l.lectureId === id);
   if (!(await ask({title:`«${L.name}» löschen?`, text:`${cs.length} ${cs.length === 1 ? 'Karte' : 'Karten'}${lsn.length ? ` und ${lsn.length} ${lsn.length === 1 ? 'Lektion' : 'Lektionen'}` : ''} bleiben erhalten und kommen zu «Ohne Vorlesung».`, ok:'Löschen', danger:true}))) { manageSheet(); return }
   cs.forEach(c => delete c.lectureId); lsn.forEach(l => delete l.lectureId);
+  (s.videos || []).forEach(v => { if (v.lectureId === id) { delete v.lectureId; v.u = Date.now() } });
   s.lectures = s.lectures.filter(x => x.id !== id);
   s.lecturesDeleted = [...(s.lecturesDeleted || []), id].slice(-200);
   await putMany('cards', cs); await putMany('lessons', lsn); await put('subjects', s);
@@ -894,6 +912,132 @@ function toggleLecSel(sel, key, sid){
   const all = cardsOf(sid), keys = [...lecturesOf(sid).map(L => L.id), ...(all.some(c => !lecOf(c)) ? ['none'] : [])];
   if (key === '*') { if (keys.every(k => sel.has(k))) sel.clear(); else keys.forEach(k => sel.add(k)) }
   else if (sel.has(key)) sel.delete(key); else sel.add(key);
+}
+/* ---------- Videos ---------- */
+const SYNC_FILE_MAX = 50 * 1024 * 1024; // Supabase Free: max. 50 MB pro Datei
+const normVideos = l => Array.isArray(l) ? l.filter(v => v && v.id && (/^https:\/\//i.test(String(v.url || '')) || v.mediaId)).map(v => {
+  const o = {id:String(v.id), title:String(v.title || 'Video').slice(0, 140), url:v.mediaId ? '' : String(v.url).slice(0, 2000), created:+v.created || 0, u:+v.u || +v.created || 0, watched:!!v.watched};
+  if (v.mediaId) { o.mediaId = String(v.mediaId); o.size = +v.size || 0; o.local = !!v.local }
+  if (v.lectureId) o.lectureId = String(v.lectureId);
+  return o;
+}) : [];
+const fmtMB = b => b < 1048576 ? 'unter 1 MB' : (b / 1048576).toFixed(b < 10485760 ? 1 : 0).replace('.', ',') + ' MB';
+const videoLabel = v => v.mediaId ? 'Videodatei' + (v.size ? ' · ' + fmtMB(v.size) : '') + (v.local ? ' · nur auf einem Gerät' : '') : videoSource(v.url);
+function mergeById(a = [], b = [], del = []){
+  const m = new Map();
+  for (const v of [...normVideos(a), ...normVideos(b)]) { if (del.includes(v.id)) continue; const o = m.get(v.id); if (!o || v.u > o.u) m.set(v.id, v) }
+  return [...m.values()].sort((x, y) => x.created - y.created);
+}
+const videosOf = sid => { const s = subj(sid); return s && Array.isArray(s.videos) ? s.videos : [] };
+function ytId(u){
+  try {
+    const x = new URL(u), h = x.hostname.replace(/^(www|m)\./, '');
+    let id = null;
+    if (h === 'youtu.be') id = x.pathname.slice(1, 12);
+    else if (/(^|\.)youtube(-nocookie)?\.com$/.test(h)) { id = x.searchParams.get('v'); if (!id) { const m = x.pathname.match(/\/(embed|shorts|live)\/([\w-]{11})/); if (m) id = m[2] } }
+    return id && /^[\w-]{11}$/.test(id) ? id : null;
+  } catch { return null }
+}
+const isVideoFile = u => /\.(mp4|m4v|mov|webm)(\?|#|$)/i.test(u);
+const videoSource = u => ytId(u) ? 'YouTube' : /notebooklm\.google|gemini/i.test(u) ? 'NotebookLM' : isVideoFile(u) ? 'Videodatei' : (() => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return 'Link' } })();
+function videosSection(s, f){
+  const all = videosOf(s.id), shown = all.filter(v => inFilter(v, f)), seen = shown.filter(v => v.watched).length;
+  const fName = f === 'all' ? '' : f === 'none' ? 'Ohne Vorlesung' : (lecturesOf(s.id).find(L => L.id === f) || {}).name || '';
+  return `<div class="section-h"><h2>Videos${fName ? ` <span class="sh-sub">· ${esc(fName)}</span>` : ''}</h2><button class="btn" data-action="video-add">${I.plus}Video</button></div>
+    ${shown.length ? `<p class="muted small" style="margin:-4px 0 10px">${seen} von ${shown.length} gesehen</p><ul class="clist" style="margin-bottom:28px">${shown.map(v => videoRow(v, f, s.id)).join('')}</ul>`
+      : `<p class="muted small" style="margin:0 0 28px">${all.length ? 'In dieser Auswahl gibt es keine Videos.' : 'Füge Erklärvideos als Link hinzu, zum Beispiel von YouTube («Nicht gelistet») oder einen NotebookLM-Link. Sie laufen dann direkt in der App.'}</p>`}`;
+}
+function videoRow(v, f, sid){
+  const L = v.lectureId ? lecturesOf(sid).find(x => x.id === v.lectureId) : null;
+  return `<li class="crow vrow ${v.watched ? 'seen' : ''}"><button class="vplay" data-action="video-play" data-id="${esc(v.id)}" aria-label="Abspielen: ${esc(v.title)}">${I.play}</button>
+    <button class="lrow-main" data-action="video-play" data-id="${esc(v.id)}" style="padding-left:4px">
+      <div class="crow-tags"><span class="tag">${esc(videoLabel(v))}</span>${L && f === 'all' ? `<span class="tag t-lec">${esc(L.name)}</span>` : ''}${v.watched ? '<span class="tag t-done">gesehen</span>' : ''}</div>
+      <div class="crow-q"><b>${esc(v.title)}</b></div></button>
+    <button class="icon-btn" data-action="video-edit" data-id="${esc(v.id)}" aria-label="Video bearbeiten">${I.edit}</button>
+    <button class="icon-btn danger" data-action="video-del" data-id="${esc(v.id)}" aria-label="Video löschen">${I.trash}</button></li>`;
+}
+function videoSheet(id){
+  const sid = state.view.id, v = id ? videosOf(sid).find(x => x.id === id) : null, f = state.view.lec;
+  const lecDefault = v ? (v.lectureId || '') : (f && f !== 'all' && f !== 'none' ? f : '');
+  const mode = v ? (v.mediaId ? 'file' : 'link') : 'link';
+  openSheet(`<form class="form" data-form="video" data-id="${esc(id || '')}" data-mode="${mode}" style="gap:14px" novalidate><h2>${v ? 'Video bearbeiten' : 'Video hinzufügen'}</h2>
+    ${v ? '' : `<div class="seg two"><button type="button" class="on" data-action="vmode" data-m="link">Link</button><button type="button" data-action="vmode" data-m="file">Datei vom Gerät</button></div>`}
+    <div class="field"><label class="lbl" for="v-title">Titel</label><input type="text" id="v-title" maxlength="140" value="${esc(v ? v.title : '')}" placeholder="z. B. Arbeitsgedächtnis nach Baddeley" autocomplete="off"></div>
+    <div class="field" data-vm="link" ${mode === 'link' ? '' : 'hidden'}><label class="lbl" for="v-url">Link</label><input type="text" id="v-url" inputmode="url" autocapitalize="none" spellcheck="false" value="${esc(v && !v.mediaId ? v.url : '')}" placeholder="https://youtu.be/…">
+      <span class="sub" style="margin-top:2px">YouTube-Links laufen direkt in der App. Andere Links (z. B. NotebookLM) öffnet die App über einen Knopf.</span></div>
+    <div class="field" data-vm="file" ${mode === 'file' ? '' : 'hidden'}>
+      ${v ? `<span class="lbl">Datei</span><p class="small" style="color:var(--ink)">${esc(videoLabel(v))}</p>`
+        : `<span class="lbl">Videodatei</span><label class="btn" style="justify-self:start">${I.clip}Video auswählen<input type="file" accept="video/*" class="vh" id="v-file" data-vfile></label>
+      <p class="small" id="v-finfo">Auf dem MacBook z. B. vom Schreibtisch, auf iPhone und iPad aus Fotos oder Dateien.</p>`}</div>
+    ${lecturesOf(sid).length ? `<div class="field"><label class="lbl" for="v-lec">Vorlesung</label><select id="v-lec"><option value="">Ohne Vorlesung</option>${lecturesOf(sid).map(L => `<option value="${esc(L.id)}" ${lecDefault === L.id ? 'selected' : ''}>${esc(L.name)}</option>`).join('')}</select></div>` : ''}
+    <div class="err" id="v-err" role="alert" hidden></div>
+    <div class="sheet-actions"><button type="button" class="btn" data-action="sheet-no">Abbrechen</button><button type="submit" class="btn primary">Speichern</button></div></form>`);
+}
+async function saveVideo(form){
+  const sid = state.view.id, s = subj(sid), id = form.dataset.id, err = $('#v-err');
+  const mode = form.dataset.mode, file = mode === 'file' && !id ? ($('#v-file') || {}).files && $('#v-file').files[0] : null;
+  let title = $('#v-title').value.trim();
+  const url = mode === 'link' ? $('#v-url').value.trim() : '', lec = ($('#v-lec') || {}).value || '';
+  const fail = m => { err.textContent = m; err.hidden = false };
+  if (mode === 'link' && !/^https:\/\/\S+$/i.test(url)) return fail('Bitte füge einen vollständigen Link ein, der mit https:// beginnt.');
+  if (mode === 'file' && !id && !file) return fail('Bitte wähle eine Videodatei aus.');
+  if (!title && file) title = file.name.replace(/\.[^.]+$/, '');
+  if (!title) return fail('Bitte gib dem Video einen Titel.');
+  const btn = form.querySelector('[type=submit]'); btn.disabled = true;
+  const now = Date.now();
+  s.videos = normVideos(s.videos);
+  let v = id ? s.videos.find(x => x.id === id) : null, newMedia = null;
+  try {
+    if (file) {
+      btn.textContent = 'Wird gespeichert …';
+      const big = file.size > SYNC_FILE_MAX;
+      newMedia = {id:uid(), name:file.name || 'Video', type:file.type || 'video/mp4', size:file.size, data: await file.arrayBuffer()};
+      if (big) newMedia._local = 1;
+      await put('media', newMedia);
+    }
+    if (!v) { v = {id:uid(), created:now, watched:false}; s.videos.push(v) }
+    v.title = title.slice(0, 140); v.u = now;
+    if (newMedia) { v.mediaId = newMedia.id; v.size = newMedia.size; v.local = !!newMedia._local; v.url = '' } else if (mode === 'link') v.url = url;
+    if (lec) v.lectureId = lec; else delete v.lectureId;
+    await put('subjects', s); closeSheet();
+    toast(newMedia && newMedia._local ? 'Video gespeichert – nur auf diesem Gerät (grösser als 50 MB)' : id ? 'Video gespeichert' : 'Video hinzugefügt'); render();
+  } catch (e) {
+    if (newMedia) await del('media', newMedia.id, true).catch(() => {});
+    s.videos = s.videos.filter(x => x.mediaId !== (newMedia && newMedia.id) || !newMedia);
+    btn.disabled = false; btn.textContent = 'Speichern';
+    fail(e && e.name === 'QuotaExceededError' ? 'Auf diesem Gerät ist nicht genug Speicher für dieses Video frei.' : 'Speichern hat nicht geklappt.');
+  }
+}
+async function setWatched(id, val){
+  const s = subj(state.view.id); if (!s) return;
+  const v = (s.videos || []).find(x => x.id === id); if (!v) return;
+  v.watched = val; v.u = Date.now();
+  await put('subjects', s).catch(() => {});
+}
+async function playVideo(id){
+  const v = videosOf(state.view.id).find(x => x.id === id); if (!v) return;
+  if (v.mediaId) {
+    layer.innerHTML = `<div class="viewer"><div class="viewer-bar"><button class="icon-btn" data-action="video-close" aria-label="Schliessen">${I.close}</button>
+      <div class="t"></div><button class="btn ${v.watched ? 'seen-on' : ''}" data-action="video-watched" data-id="${esc(v.id)}">${v.watched ? '✓ Gesehen' : 'Als gesehen markieren'}</button></div>
+      <div class="viewer-body vbody"><div class="empty" style="padding:24px"><p>Video wird geladen …</p></div></div></div>`;
+    layer.querySelector('.t').textContent = v.title;
+    const r = await mediaURL(v.mediaId), body = layer.querySelector('.vbody'); if (!body) return;
+    if (r) { body.innerHTML = '<div class="vframe"><video controls playsinline preload="metadata"></video></div>'; body.querySelector('video').src = r.url }
+    else body.innerHTML = `<div class="empty" style="padding:24px"><p>${v.local ? 'Dieses Video ist nur auf dem Gerät gespeichert, auf dem du es hinzugefügt hast, weil es grösser als 50 MB ist.' : 'Das Video ist auf diesem Gerät noch nicht vorhanden. Es wird geladen, sobald du online und angemeldet bist.'}</p></div>`;
+    return;
+  }
+  const yt = ytId(v.url);
+  layer.innerHTML = `<div class="viewer"><div class="viewer-bar"><button class="icon-btn" data-action="video-close" aria-label="Schliessen">${I.close}</button>
+    <div class="t"></div>
+    <button class="btn ${v.watched ? 'seen-on' : ''}" data-action="video-watched" data-id="${esc(v.id)}">${v.watched ? '✓ Gesehen' : 'Als gesehen markieren'}</button></div>
+    <div class="viewer-body vbody">${yt ? `<div class="vframe"><iframe title="Video" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`
+      : isVideoFile(v.url) ? `<div class="vframe"><video controls playsinline preload="metadata"></video></div>`
+      : `<div class="empty" style="padding:24px"><p>Dieses Video lässt sich nicht direkt in der App abspielen. Tippe auf den Knopf, um es zu öffnen.</p></div>`}
+      <a class="btn ${yt || isVideoFile(v.url) ? '' : 'primary'}" target="_blank" rel="noopener noreferrer">${I.ext}${yt ? 'Auf YouTube öffnen' : 'Video öffnen'}</a></div></div>`;
+  layer.querySelector('.t').textContent = v.title;
+  layer.querySelector('a[target]').href = v.url;
+  const fr = layer.querySelector('iframe'); if (fr) fr.src = `https://www.youtube-nocookie.com/embed/${yt}?playsinline=1&rel=0`;
+  const vd = layer.querySelector('video'); if (vd) vd.src = v.url;
 }
 const mediaIds = c => [...(c.qMedia||[]), ...(c.aMedia||[]), ...(c.options||[]).flatMap(o => o.media || [])].map(m => m.id);
 function countMedia(c){ return (c.qMedia||[]).length + (c.aMedia||[]).length + (c.options||[]).reduce((n,o) => n + (o.media||[]).length, 0) }
@@ -1433,9 +1577,12 @@ async function applyRemote(row){
     const rAt = Math.max(+local.examsResetAt || 0, +d.examsResetAt || 0);
     const rem = Array.isArray(d.exams) ? d.exams.filter(x => x && +x.max > 0 && +x.at > rAt).map(x => ({at:+x.at, pts:+x.pts || 0, max:+x.max})) : [];
     const ex = mergeExams((local.exams || []).filter(x => x.at > rAt), rem);
-    const same = JSON.stringify(lec) === JSON.stringify(normLectures(local.lectures)) && ex.length === (local.exams || []).length && delL.length === (local.lecturesDeleted || []).length;
+    const delV = [...new Set([...(local.videosDeleted || []), ...(Array.isArray(d.videosDeleted) ? d.videosDeleted.map(String) : [])])].slice(-500);
+    const vids = mergeById(local.videos, d.videos, delV);
+    const same = JSON.stringify(lec) === JSON.stringify(normLectures(local.lectures)) && ex.length === (local.exams || []).length && delL.length === (local.lecturesDeleted || []).length
+      && JSON.stringify(vids) === JSON.stringify(mergeById([], local.videos, [])) && delV.length === (local.videosDeleted || []).length;
     if (same) return false;
-    local.lectures = lec; local.lecturesDeleted = delL; local.exams = ex; local.examsResetAt = rAt; local._d = 1;
+    local.lectures = lec; local.lecturesDeleted = delL; local.exams = ex; local.examsResetAt = rAt; local.videos = vids; local.videosDeleted = delV; local._d = 1;
     await put(n, local, true); return true;
   }
   const tomb = state.tombs.find(t => t.kind === row.kind && t.id === row.id);
@@ -1456,11 +1603,14 @@ async function applyRemote(row){
     v = {id:String(row.id), name:String(d.name || 'Fach'), color:safeColor(d.color), created:+d.created || Date.now(), examsResetAt:rAt,
       exams:mergeExams((local && local.exams || []).filter(x => x.at > rAt), rem.filter(x => x.at > rAt)),
       lectures:mergeLectureLists(local && local.lectures, d.lectures, delL), lecturesDeleted:delL};
+    const delV = [...new Set([...(Array.isArray(d.videosDeleted) ? d.videosDeleted.map(String) : []), ...((local && local.videosDeleted) || [])])].slice(-500);
+    v.videos = mergeById(local && local.videos, d.videos, delV); v.videosDeleted = delV;
   }
   if (!v) return false;
   v._u = ru; v._d = 0;
   if (row.kind === 'subject' && local && (v.exams.length > (Array.isArray(d.exams) ? d.exams.filter(x => x && x.at > v.examsResetAt).length : 0)
-      || v.lectures.length > normLectures(d.lectures).filter(L => !v.lecturesDeleted.includes(L.id)).length || v.lecturesDeleted.length > (Array.isArray(d.lecturesDeleted) ? d.lecturesDeleted.length : 0))) { v._d = 1; v._u = Math.max(ru, local._u || 0) + 1 }
+      || v.lectures.length > normLectures(d.lectures).filter(L => !v.lecturesDeleted.includes(L.id)).length || v.lecturesDeleted.length > (Array.isArray(d.lecturesDeleted) ? d.lecturesDeleted.length : 0)
+      || JSON.stringify(v.videos) !== JSON.stringify(mergeById([], d.videos, v.videosDeleted)) || v.videosDeleted.length > (Array.isArray(d.videosDeleted) ? d.videosDeleted.length : 0))) { v._d = 1; v._u = Math.max(ru, local._u || 0) + 1 }
   await put(n, v, true);
   return true;
 }
@@ -1475,7 +1625,9 @@ async function mergeSameName(){
     cs.forEach(c => { c.subjectId = t.id; if (c.lectureId && lm[c.lectureId]) c.lectureId = lm[c.lectureId] });
     lsn.forEach(l => { l.subjectId = t.id; if (l.lectureId && lm[l.lectureId]) l.lectureId = lm[l.lectureId] });
     await putMany('cards', cs); await putMany('lessons', lsn);
-    t.exams = mergeExams(t.exams, s.exams); await put('subjects', t);
+    t.exams = mergeExams(t.exams, s.exams);
+    t.videos = mergeById(t.videos, normVideos(s.videos).map(v => ({...v, lectureId: v.lectureId && lm[v.lectureId] ? lm[v.lectureId] : v.lectureId})), t.videosDeleted || []);
+    await put('subjects', t);
     await del('subjects', s.id, true); moved = true;
   }
   return moved;
@@ -1485,8 +1637,12 @@ async function pushAll(me){
   for (const [n, kind] of Object.entries(SYNCED)) {
     for (const v of (await all(n)).filter(x => x._d)) {
       if (kind === 'media') {
-        if (!v.data) continue;
-        if (!v._up) await sb(`/storage/v1/object/media/${me}/${encodeURIComponent(v.id)}`, {method:'POST', headers:{'Content-Type':v.type || 'application/octet-stream', 'x-upsert':'true'}, body:new Blob([v.data], {type:v.type})});
+        if (!v.data || v._local) continue;
+        if (!v._up) {
+          if (v.data.byteLength > SYNC_FILE_MAX) { v._local = 1; await put('media', v, true); continue }
+          try { await sb(`/storage/v1/object/media/${me}/${encodeURIComponent(v.id)}`, {method:'POST', headers:{'Content-Type':v.type || 'application/octet-stream', 'x-upsert':'true'}, body:new Blob([v.data], {type:v.type})}) }
+          catch (e) { if (e.status === 413 || /too large|size/i.test(e.message || '')) { v._local = 1; await put('media', v, true); continue } throw e }
+        }
         rows.push({row:{kind, id:v.id, data:{name:v.name, type:v.type, size:v.size}, deleted:false, updated_at:v._u || Date.now()}, n, v});
       } else {
         const {_u, _d, _up, ...data} = v;
@@ -2053,8 +2209,9 @@ async function importBackup(file){
       const exist = state.subjects.find(x => x.id === String(s.id));
       const same = exist || state.subjects.find(x => norm(x.name) === norm(s.name));
       if (same) {
-        const copy = JSON.parse(JSON.stringify(same)); Object.assign(lecMap, mergeLecturesInto(copy, s));
-        if (exist) { s.lectures = copy.lectures; return true }
+        const copy = JSON.parse(JSON.stringify(same)); const lm = mergeLecturesInto(copy, s); Object.assign(lecMap, lm);
+        copy.videos = mergeById(copy.videos, normVideos(s.videos).map(v => ({...v, lectureId: v.lectureId && lm[v.lectureId] ? lm[v.lectureId] : v.lectureId})), copy.videosDeleted || []);
+        if (exist) { s.lectures = copy.lectures; s.videos = copy.videos; return true }
         remap[String(s.id)] = same.id; touched.push(copy); return false;
       }
       return true;
@@ -2063,8 +2220,9 @@ async function importBackup(file){
     const cards = meta.cards.map(normCard).filter(Boolean).map(c => fixLec({...c, subjectId: remap[c.subjectId] || c.subjectId}));
     const lessons = (Array.isArray(meta.lessons) ? meta.lessons : []).map(normLesson).filter(Boolean).map(l => fixLec({...l, subjectId: remap[l.subjectId] || l.subjectId}));
     const into = [...new Set([...cards, ...lessons].map(c => c.subjectId))].map(id => (state.subjects.find(x => x.id === id) || newSubjects.find(x => String(x.id) === id) || {}).name).filter(Boolean);
-    if (!cards.length && !lessons.length) throw new Error('empty');
-    const what = [cards.length ? `${cards.length} ${cards.length === 1 ? 'Karte' : 'Karten'}` : '', lessons.length ? `${lessons.length} ${lessons.length === 1 ? 'Lektion' : 'Lektionen'}` : ''].filter(Boolean).join(' und ');
+    const nVid = meta.subjects.reduce((n, x) => n + normVideos(x && x.videos).length, 0);
+    if (!cards.length && !lessons.length && !nVid) throw new Error('empty');
+    const what = [cards.length ? `${cards.length} ${cards.length === 1 ? 'Karte' : 'Karten'}` : '', lessons.length ? `${lessons.length} ${lessons.length === 1 ? 'Lektion' : 'Lektionen'}` : '', nVid ? `${nVid} ${nVid === 1 ? 'Video' : 'Videos'}` : ''].filter(Boolean).join(', ');
     const ok = await ask({title:'Importieren?', text:`${what} ${cards.length + lessons.length === 1 ? 'wird' : 'werden'} übernommen${into.length ? ` (Fach: ${into.join(', ')})` : ''}. Deine bestehenden Karten bleiben erhalten; Karten, die schon vorhanden sind, werden nicht doppelt angelegt.`, ok:'Importieren'});
     if (!ok) return;
     for (const m of (meta.media || [])) await put('media', {id:String(m.id), name:String(m.name || 'Datei'), type:String(m.type || 'application/octet-stream'), size:m.length, data:buf.slice(base + m.offset, base + m.offset + m.length)});
@@ -2074,7 +2232,8 @@ async function importBackup(file){
       const merged = old ? [...(old.exams || []), ...ex.filter(x => !(old.exams || []).some(y => y.at === x.at))].sort((a, b) => a.at - b.at).slice(-10) : ex;
       const rAt = Math.max(+(old && old.examsResetAt) || 0, +s.examsResetAt || 0);
       return {id:String(s.id), name:String(s.name || 'Fach'), color:safeColor(s.color), created:+s.created || Date.now(), examsResetAt:rAt, exams:merged.filter(x => x.at > rAt),
-        lectures:normLectures(s.lectures), lecturesDeleted:Array.isArray(old && old.lecturesDeleted) ? old.lecturesDeleted : []};
+        lectures:normLectures(s.lectures), lecturesDeleted:Array.isArray(old && old.lecturesDeleted) ? old.lecturesDeleted : [],
+        videos:normVideos(s.videos), videosDeleted:Array.isArray(old && old.videosDeleted) ? old.videosDeleted : []};
     }));
     if (touched.length) await putMany('subjects', touched);
     await putMany('cards', cards);
@@ -2092,6 +2251,7 @@ async function importBackup(file){
     }
     await load(); toast(`Import fertig: ${what}`);
     const target = [...new Set([...cards, ...lessons].map(c => c.subjectId))];
+    if (!target.length && meta.subjects.length === 1) target.push(remap[String(meta.subjects[0].id)] || String(meta.subjects[0].id));
     go(target.length === 1 ? {name:'subject', id:target[0]} : {name:'home'});
   } catch (e) {
     closeSheet();
@@ -2157,6 +2317,20 @@ const actions = {
   },
   'check': () => state.view.name === 'lesson' ? lessonCheck() : checkAnswer(),
   'convert': el => convertCard(el.dataset.id),
+  'video-add': () => videoSheet(),
+  'vmode': el => { const form = el.closest('form'); form.dataset.mode = el.dataset.m;
+    form.querySelectorAll('[data-action=vmode]').forEach(b => b.classList.toggle('on', b === el));
+    form.querySelectorAll('[data-vm]').forEach(x => x.hidden = x.dataset.vm !== el.dataset.m); $('#v-err').hidden = true },
+  'video-edit': el => videoSheet(el.dataset.id),
+  'video-play': el => playVideo(el.dataset.id),
+  'video-close': () => { layer.innerHTML = ''; render() },
+  'video-watched': async el => { const v = videosOf(state.view.id).find(x => x.id === el.dataset.id); if (!v) return;
+    await setWatched(v.id, !v.watched); el.classList.toggle('seen-on', v.watched); el.textContent = v.watched ? '✓ Gesehen' : 'Als gesehen markieren' },
+  'video-del': async el => { const s = subj(state.view.id), v = videosOf(s.id).find(x => x.id === el.dataset.id); if (!v) return;
+    if (!(await ask({title:'Video entfernen?', text: v.mediaId ? `«${v.title}» wird mit der Videodatei aus der App gelöscht. Die Originaldatei auf deinem Gerät bleibt bestehen.` : `«${v.title}» wird aus der App entfernt. Das Video selbst (z. B. auf YouTube) bleibt bestehen.`, ok:'Entfernen', danger:true}))) return;
+    s.videos = s.videos.filter(x => x.id !== v.id); s.videosDeleted = [...(s.videosDeleted || []), v.id].slice(-500);
+    if (v.mediaId) { await del('media', v.mediaId).catch(() => {}); const c = mediaCache.get(v.mediaId); if (c) { URL.revokeObjectURL(c.url); mediaCache.delete(v.mediaId) } }
+    await put('subjects', s); toast('Video entfernt'); render() },
   'lec-filter': el => { state.view.lec = el.dataset.l; state.sel.ids.clear(); render() },
   'lec-add': () => lecAddSheet(),
   'lec-add-from-manage': () => lecAddSheet('manage'),
@@ -2247,7 +2421,7 @@ document.addEventListener('click', e => {
   const fn = actions[el.dataset.action]; if (fn) fn(el, e);
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && layer.innerHTML) { closeSheet(false); return }
+  if (e.key === 'Escape' && layer.innerHTML) { const pl = layer.querySelector('[data-action=video-close]'); closeSheet(false); if (pl) render(); return }
   const t = e.target;
   if ((e.key === 'Enter' || e.key === ' ') && t.dataset && t.dataset.action === 'flip') { e.preventDefault(); actions.flip(t) }
   if ((e.key === 'Enter' || e.key === ' ') && t.dataset && t.dataset.action === 'sel-toggle') { e.preventDefault(); actions['sel-toggle'](t) }
@@ -2255,6 +2429,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('submit', e => {
   e.preventDefault();
   if (e.target.dataset.form === 'subject') createSubject();
+  else if (e.target.dataset.form === 'video') saveVideo(e.target);
   else if (e.target.dataset.form === 'lec-add') {
     const after = e.target.dataset.after, name = ($('#lec-name') || {}).value || '';
     addLecture(state.view.id, name).then(L => {
@@ -2286,6 +2461,14 @@ function onBind(e){
 document.addEventListener('input', onBind);
 document.addEventListener('change', e => {
   const t = e.target;
+  if (t.dataset && 'vfile' in t.dataset) {
+    const f = t.files && t.files[0], info = $('#v-finfo'); if (!f || !info) return;
+    const big = f.size > SYNC_FILE_MAX;
+    info.innerHTML = `<b></b> · ${fmtMB(f.size)}<br>${big ? 'Grösser als 50 MB: Das Video wird <b>nur auf diesem Gerät</b> gespeichert und nicht synchronisiert.' : 'Wird mit deinen anderen Geräten synchronisiert und zählt zu deinem Speicher von 1 GB.'}`;
+    info.querySelector('b').textContent = f.name;
+    const ti = $('#v-title'); if (ti && !ti.value.trim()) ti.value = f.name.replace(/\.[^.]+$/, '');
+    return;
+  }
   if (t.dataset && t.dataset.lecRename) {
     const s = subj(state.view.id), L = s && (s.lectures || []).find(x => x.id === t.dataset.lecRename), v = t.value.trim().slice(0, 80);
     if (L && v && v !== L.name) { L.name = v; put('subjects', s).then(() => render()) } else if (L) t.value = L.name;
