@@ -297,6 +297,8 @@ input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var
 .check-row.on .box{background:var(--accent);border-color:var(--accent)}
 .check-row.on .box::after{content:"";width:9px;height:5px;border:2.5px solid var(--accent-ink);border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
 .check-row:disabled{opacity:.5;cursor:default}
+.resume-row{border-color:var(--accent);color:var(--ink)}
+.resume-row::before{content:"";flex:none;width:0;height:0;border-left:11px solid var(--accent);border-top:7px solid transparent;border-bottom:7px solid transparent}
 .check-row span.n{margin-left:auto;color:var(--muted);font-weight:500;font-size:14px}
 .score{display:grid;justify-items:center;gap:4px;text-align:center;padding:8px 0 4px}
 .score b{font-family:var(--round);font-size:clamp(44px,9vw,64px);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -596,7 +598,7 @@ const del = (n, k, raw) => run(n, 'readwrite', s => s.delete(k)).then(r => { if 
 async function putMany(n, list, raw){ return run(n, 'readwrite', s => { list.forEach(v => s.put(raw ? v : stamp(n, v))) }) }
 
 /* ---------- Zustand ---------- */
-const state = { subjects:[], cards:[], lessons:[], stats:{id:'stats', days:{}}, remoteStats:{id:'remoteStats', map:{}}, resets:{id:'resets', all:0, s:{}, applied:{all:0, s:{}}, _d:0}, tombs:[], device:'', sync:{status:'off', last:+ls.get('sync-last') || 0, err:''}, pendingReload:false, view:{name:'home'}, draft:null, session:null, err:'' };
+const state = { subjects:[], cards:[], lessons:[], stats:{id:'stats', days:{}}, remoteStats:{id:'remoteStats', map:{}}, resets:{id:'resets', all:0, s:{}, applied:{all:0, s:{}}, _d:0}, tombs:[], learnPos:{id:'learnPos', map:{}}, device:'', sync:{status:'off', last:+ls.get('sync-last') || 0, err:''}, pendingReload:false, view:{name:'home'}, draft:null, session:null, err:'' };
 const subj = id => state.subjects.find(s => s.id === id);
 const cardById = id => state.cards.find(c => c.id === id);
 const cardsOf = sid => state.cards.filter(c => c.subjectId === sid).sort((a,b) => a.created - b.created);
@@ -900,13 +902,21 @@ function learnSheet(sid){
   if (!lecSel.types) lecSel.types = new Set(TYPES);
   const inLec = lecs.length ? all.filter(c => lecSel.sel.has(lecKey(c))) : all;
   const n = inLec.filter(c => lecSel.types.has(c.type)).length;
-  openSheet(`<h2>Was möchtest du lernen?</h2><p>Wähle ${lecs.length ? 'Vorlesungen und ' : ''}Fragetypen.</p>
+  const rounds = roundsOf(sid), curKey = roundKey(lecs.length ? lecSel.sel : null, lecSel.types);
+  const open = Object.entries(rounds).map(([k, r]) => ({k, r, i:roundInfo(sid, r)})).filter(x => x.i.open && (x.i.done || x.r.again)).sort((a, b) => b.r.at - a.r.at);
+  const curOpen = open.find(x => x.k === curKey);
+  openSheet(`<h2>Was möchtest du lernen?</h2>
+    ${open.length ? `<div class="setup-group"><span class="lbl">Weiterlernen, wo du aufgehört hast</span>
+      ${open.map(x => `<button type="button" class="check-row resume-row" data-action="learn-resume" data-k="${esc(x.k)}"><span class="rr-t">${esc(roundLabel(sid, x.r))}</span><span class="n">${x.i.done} von ${x.i.total} gewusst</span></button>`).join('')}</div>` : ''}
+    <p>${open.length ? 'Oder neu wählen: ' : 'Wähle '}${lecs.length ? 'Vorlesungen und ' : ''}Fragetypen.</p>
     ${lecs.length ? lecPicker(sid, lecSel.sel, 'lsel-toggle') : ''}
     <div class="setup-group"><span class="lbl">Fragetypen</span>
       ${TYPES.map(t => { const k = inLec.filter(c => c.type === t).length, on = k && lecSel.types.has(t);
         return `<button type="button" class="check-row ${on ? 'on' : ''}" data-action="ltype-toggle" data-t="${t}" ${k ? '' : 'disabled'}><span class="box"></span>${t === 'basic' ? 'Karteikarten' : TYPE_NAMES[t]}<span class="n">${k || 'noch keine Karten'}</span></button>` }).join('')}
       ${TYPES.some(t => !inLec.some(c => c.type === t)) ? '<p class="small muted">Fehlende Typen erstellst du mit «Neue Karte», mit «In Choice-Frage umwandeln» oder lässt sie dir von Claude aus deinen Karten erstellen.</p>' : ''}</div>
-    <div class="sheet-actions"><button class="btn" data-action="sheet-no">Abbrechen</button><button class="btn primary" data-action="learn-go" ${n ? '' : 'disabled'}>Los (${n} ${n === 1 ? 'Karte' : 'Karten'})</button></div>`);
+    <div class="sheet-actions"><button class="btn" data-action="sheet-no">Abbrechen</button>${curOpen
+      ? `<button class="btn" data-action="learn-go" ${n ? '' : 'disabled'}>Von vorne</button><button class="btn primary" data-action="learn-resume" data-k="${esc(curKey)}">Weiter (${curOpen.i.done}/${curOpen.i.total})</button>`
+      : `<button class="btn primary" data-action="learn-go" ${n ? '' : 'disabled'}>Los (${n} ${n === 1 ? 'Karte' : 'Karten'})</button>`}</div>`);
 }
 function lecPicker(sid, sel, action){
   const all = cardsOf(sid), lecs = lecturesOf(sid), none = all.filter(c => !lecOf(c)).length;
@@ -1188,16 +1198,71 @@ async function saveDraft(again){
 }
 
 /* ---------- Lernmodus ---------- */
-function startLearn(sid, sel, types){
-  const ids = cardsOf(sid).filter(c => (!sel || sel.has(lecKey(c))) && (!types || types.has(c.type))).map(c => c.id);
+/* Angefangene Lernrunden: pro Fach und Auswahl (Vorlesungen + Fragetypen) wird gespeichert, wo man steht.
+   Synchronisiert als Zeile kind 'stats', id 'learn:<Fach-ID>' (ältere App-Versionen ignorieren sie). */
+const roundKey = (sel, types) => (sel ? [...sel].sort().join(',') : '*') + '|' + (types ? [...types].sort().join(',') : '*');
+const strArr = a => Array.isArray(a) ? a.map(String).slice(0, 5000) : [];
+const normRounds = r => { const o = {}; if (r && typeof r === 'object') Object.entries(r).forEach(([k, x]) => { if (!x || typeof x !== 'object') return;
+  o[k] = {sel: Array.isArray(x.sel) ? strArr(x.sel) : null, types: Array.isArray(x.types) ? strArr(x.types).filter(t => TYPES.includes(t)) : null,
+    queue:strArr(x.queue), doneIds:strArr(x.doneIds), seen:strArr(x.seen), again:+x.again || 0, pts:+x.pts || 0, maxPts:+x.maxPts || 0, at:+x.at || 0} }); return o };
+const roundsOf = sid => { const m = state.learnPos.map[sid]; return m && m.rounds ? m.rounds : {} };
+let lpSaving = Promise.resolve();
+function saveLearnPos(){ const snap = JSON.parse(JSON.stringify(state.learnPos)); lpSaving = lpSaving.then(() => put('meta', snap, true)).catch(() => {}) }
+function setRound(sid, key, round){
+  const m = state.learnPos.map[sid] || (state.learnPos.map[sid] = {at:0, rounds:{}});
+  if (round) m.rounds[key] = round; else delete m.rounds[key];
+  const keys = Object.keys(m.rounds).sort((a, b) => m.rounds[b].at - m.rounds[a].at);
+  keys.slice(8).forEach(k => delete m.rounds[k]);
+  m.at = Math.max(Date.now(), (m.at || 0) + 1); m.d = 1;
+  saveLearnPos(); scheduleSync();
+}
+function storeRound(){
+  const s = state.session; if (!s) return;
+  const key = roundKey(s.sel, s.types);
+  if (!s.queue.some(id => cardById(id))) return setRound(s.sid, key, null);
+  setRound(s.sid, key, {sel: s.sel ? [...s.sel] : null, types: s.types ? [...s.types] : null, queue:[...s.queue], doneIds:[...s.doneIds],
+    seen:[...s.seen], again:s.again, pts:s.pts, maxPts:s.maxPts, at:Date.now()});
+}
+function roundInfo(sid, r){
+  const sel = r.sel ? new Set(r.sel) : null, types = r.types ? new Set(r.types) : null;
+  const match = c => (!sel || sel.has(lecKey(c))) && (!types || types.has(c.type));
+  const done = new Set(r.doneIds.filter(id => { const c = cardById(id); return c && match(c) }));
+  const open = new Set(r.queue.filter(id => { const c = cardById(id); return c && match(c) && !done.has(id) }));
+  cardsOf(sid).forEach(c => { if (match(c) && !done.has(c.id)) open.add(c.id) });
+  return {done:done.size, total:done.size + open.size, open:open.size};
+}
+function roundLabel(sid, r){
+  const lecs = lecturesOf(sid), keys = [...lecs.map(L => L.id), ...(cardsOf(sid).some(c => !lecOf(c)) ? ['none'] : [])];
+  let a = '';
+  if (lecs.length && r.sel && !keys.every(k => r.sel.includes(k))) a = r.sel.map(k => k === 'none' ? 'Ohne Vorlesung' : (lecs.find(L => L.id === k) || {}).name).filter(Boolean).join(', ');
+  const avail = TYPES.filter(t => cardsOf(sid).some(c => c.type === t));
+  const tps = r.types ? avail.filter(t => r.types.includes(t)) : avail;
+  const b = tps.length === avail.length ? '' : tps.map(t => t === 'basic' ? 'Karteikarten' : TYPE_NAMES[t]).join(', ');
+  return [a, b].filter(Boolean).join(' · ') || 'Alle Karten';
+}
+function startLearn(sid, sel, types, resume){
+  const match = c => (!sel || sel.has(lecKey(c))) && (!types || types.has(c.type));
+  const ids = cardsOf(sid).filter(match).map(c => c.id);
   if (!ids.length) return;
-  state.session = {sid, sel: sel ? new Set(sel) : null, types: types ? new Set(types) : null, queue:ids, total:ids.length, done:0, known:0, again:0, pts:0, maxPts:0, seen:new Set(), cur:null};
+  const key = roundKey(sel, types), r = resume ? roundsOf(sid)[key] : null;
+  state.session = {sid, sel: sel ? new Set(sel) : null, types: types ? new Set(types) : null, queue:ids, total:ids.length, done:0, known:0, again:0, pts:0, maxPts:0, seen:new Set(), doneIds:new Set(), cur:null};
+  if (r) {
+    const s = state.session, ok = id => { const c = cardById(id); return c && match(c) };
+    s.doneIds = new Set(r.doneIds.filter(ok));
+    const q = r.queue.filter(id => ok(id) && !s.doneIds.has(id)), inQ = new Set(q);
+    ids.forEach(id => { if (!inQ.has(id) && !s.doneIds.has(id)) { q.push(id); inQ.add(id) } });
+    if (q.length) {
+      s.queue = q; s.done = s.known = s.doneIds.size; s.total = s.doneIds.size + inQ.size;
+      s.again = r.again; s.pts = r.pts; s.maxPts = r.maxPts; s.seen = new Set(r.seen.filter(ok));
+    } else s.doneIds = new Set();
+  }
+  storeRound();
   nextCard();
 }
 function nextCard(){
   const s = state.session;
   while (s.queue.length && !cardById(s.queue[0])) s.queue.shift();
-  if (!s.queue.length) return go({name:'done'});
+  if (!s.queue.length) { setRound(s.sid, roundKey(s.sel, s.types), null); return go({name:'done'}) }
   s.cur = {id:s.queue[0], flipped:false, ever:false, checked:false, sel:[], judge:[null, null, null, null], result:null};
   go({name:'learn'});
 }
@@ -1289,7 +1354,7 @@ function resultBanner(c, r, T, lang){
 function checkAnswer(){
   const s = state.session, cur = s.cur, c = cardById(cur.id);
   cur.result = scoreOf(c, cur);
-  if (!s.seen.has(c.id)) { s.seen.add(c.id); s.maxPts += 1; s.pts += cur.result.score }
+  if (!s.seen.has(c.id)) { s.seen.add(c.id); s.maxPts += 1; s.pts += cur.result.score; storeRound() }
   cur.checked = true; render();
 }
 async function rate(known){
@@ -1297,9 +1362,10 @@ async function rate(known){
   c.stats = c.stats || {known:0, again:0};
   c.last = known ? 'known' : 'again'; c.lastAt = Date.now();
   record(c.subjectId, [known]);
-  if (known) { s.known++; s.done++; c.stats.known++ }
+  if (known) { s.known++; s.done++; c.stats.known++; s.doneIds.add(id) }
   else { s.again++; c.stats.again++; s.queue.splice(Math.min(3, s.queue.length), 0, id) }
   put('cards', c).catch(() => {});
+  if (s.queue.some(x => cardById(x))) storeRound();
   nextCard();
 }
 function viewDone(){
@@ -1569,6 +1635,13 @@ async function applyRemote(row){
       if (!ch) return false;
       applyResets(); await put('meta', rz, true); return true;
     }
+    if (String(row.id).startsWith('learn:')) {
+      const sid = String(row.id).slice(6), ru = +row.updated_at || 0, m = state.learnPos.map[sid];
+      if (m && (m.at || 0) >= ru) return false;
+      const lim = Math.max(state.resets.all || 0, state.resets.s[sid] || 0);
+      const rounds = normRounds(row.data && row.data.rounds); Object.keys(rounds).forEach(k => { if (rounds[k].at < lim) delete rounds[k] });
+      state.learnPos.map[sid] = {at:ru, d:0, rounds}; saveLearnPos(); return true;
+    }
     if (row.id === state.device || !row.data || typeof row.data.days !== 'object') return false;
     state.remoteStats.map[row.id] = {days:row.data.days, at:+row.updated_at || 0}; await put('meta', state.remoteStats, true); return true;
   }
@@ -1661,6 +1734,7 @@ async function pushAll(me){
   tombs.forEach(t => rows.push({row:{kind:t.kind, id:t.id, data:null, deleted:true, updated_at:t.at}, tomb:t}));
   if (state.stats._d) rows.push({row:{kind:'stats', id:state.device, data:{days:state.stats.days}, deleted:false, updated_at:Date.now()}, stats:true});
   if (state.resets._d) rows.push({row:{kind:'stats', id:'_reset', data:{all:state.resets.all, s:state.resets.s}, deleted:false, updated_at:Date.now()}, resets:true});
+  Object.entries(state.learnPos.map).forEach(([sid, m]) => { if (m.d) rows.push({row:{kind:'stats', id:'learn:' + sid, data:{rounds:m.rounds}, deleted:false, updated_at:m.at}, lp:sid, at:m.at}) });
   // in Paketen von höchstens ca. 1 MB senden
   let chunk = [], size = 0;
   const send = async () => {
@@ -1673,6 +1747,7 @@ async function pushAll(me){
         if (x.tomb.kind === 'media') sb(`/storage/v1/object/media/${me}/${encodeURIComponent(x.tomb.id)}`, {method:'DELETE'}).catch(() => {});
       } else if (x.stats) { state.stats._d = 0; await put('meta', state.stats, true) }
       else if (x.resets) { state.resets._d = 0; await put('meta', state.resets, true) }
+      else if (x.lp) { const m = state.learnPos.map[x.lp]; if (m && m.at === x.at) { m.d = 0; saveLearnPos() } }
     }
     await put('meta', {id:'tombs', list:state.tombs}, true);
     chunk = []; size = 0;
@@ -1785,6 +1860,10 @@ function applyResets(){
     ap.s[sid] = ts; ch = true;
   });
   if (ch) { state.stats._d = 1; put('meta', JSON.parse(JSON.stringify(state.stats)), true).catch(() => {}) }
+  let lpCh = false;
+  Object.entries(state.learnPos.map).forEach(([sid, m]) => { const lim = Math.max(rz.all || 0, rz.s[sid] || 0);
+    Object.keys(m.rounds || {}).forEach(k => { if (m.rounds[k].at < lim) { delete m.rounds[k]; lpCh = true } }) });
+  if (lpCh) saveLearnPos();
   return ch;
 }
 async function resetProgress(sid){
@@ -2315,7 +2394,9 @@ const actions = {
   'lsel-toggle': el => { toggleLecSel(lecSel.sel, el.dataset.l, lecSel.sid); learnSheet(lecSel.sid) },
   'learn-go': () => { closeSheet(); startLearn(lecSel.sid, lecturesOf(lecSel.sid).length ? new Set(lecSel.sel) : null, new Set(lecSel.types)) },
   'ltype-toggle': el => { const t = el.dataset.t; if (lecSel.types.has(t)) lecSel.types.delete(t); else lecSel.types.add(t); learnSheet(lecSel.sid) },
-  'end-learn': () => go({name:'subject', id:state.session.sid}),
+  'end-learn': () => { const s = state.session; if (s && s.queue.some(x => cardById(x)) && (s.doneIds.size || s.again)) toast('Gespeichert. Beim nächsten «Lernen starten» machst du hier weiter.'); go({name:'subject', id:s.sid}) },
+  'learn-resume': el => { const sid = lecSel.sid, r = roundsOf(sid)[el.dataset.k]; if (!r) return learnSheet(sid); closeSheet();
+    startLearn(sid, r.sel ? new Set(r.sel) : null, r.types ? new Set(r.types) : null, true) },
   'flip': el => {
     const cur = state.session.cur; cur.flipped = !cur.flipped; cur.ever = true;
     el.classList.toggle('is-flipped', cur.flipped);
@@ -2513,6 +2594,7 @@ async function load(){
   const st = await get('meta', 'stats'); state.stats = st && st.days ? st : {id:'stats', days:{}};
   const rs = await get('meta', 'remoteStats'); state.remoteStats = rs && rs.map ? rs : {id:'remoteStats', map:{}};
   const rz = await get('meta', 'resets'); state.resets = rz && rz.s ? rz : {id:'resets', all:0, s:{}, applied:{all:0, s:{}}, _d:0};
+  const lp = await get('meta', 'learnPos'); state.learnPos = lp && lp.map ? lp : {id:'learnPos', map:{}};
   const tb = await get('meta', 'tombs'); state.tombs = tb && Array.isArray(tb.list) ? tb.list : [];
   let dv = await get('meta', 'device'); if (!dv) { dv = {id:'device', did:uid()}; await put('meta', dv, true) } state.device = dv.did;
 }
